@@ -1,4 +1,4 @@
-// Golden Bell Quiz Server v4.0
+// Speed Golden Bell Quiz Server v5.0
 'use strict';
 const express = require('express');
 const http    = require('http');
@@ -8,6 +8,10 @@ const QRCode  = require('qrcode');
 const path    = require('path');
 const fs      = require('fs');
 const os      = require('os');
+
+const SERVER_START_TIME = new Date().toISOString();
+const QUESTION_TIME     = 15;   // 전 문제 15초 고정
+const REVEAL_DELAY      = 3000; // ms: 답변 마감 후 정답 공개까지 카운트다운
 
 const app    = express();
 const server = http.createServer(app);
@@ -54,12 +58,14 @@ function parseRow(row, i) {
     else if (choices.length === 0) type = 'short';
     else type = 'choice';
   }
+  // essay 타입은 short로 강제 전환
+  if (type === 'essay') type = 'short';
 
   const q = {
     id:        i + 1,
     question:  String(row['문제'] || row['question'] || ''),
     choices,
-    timeLimit: parseInt(row['제한시간'] || row['time'] || 20) || 20,
+    timeLimit: QUESTION_TIME,
     type,
     answer:    null,
     correctAnswers: null,
@@ -68,8 +74,6 @@ function parseRow(row, i) {
   if (type === 'short') {
     const raw = String(row['정답'] || row['answer'] || '');
     q.correctAnswers = raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  } else if (type === 'essay') {
-    q.correctAnswers = [];
   } else {
     q.answer = parseInt(row['정답'] || row['answer'] || 1) - 1;
   }
@@ -80,7 +84,7 @@ function parseRow(row, i) {
 function loadQuestions() {
   const xlsxPath = path.join(__dirname, 'questions.xlsx');
   const jsonPath = path.join(__dirname, 'questions.json');
-  let mainQ = [], cbQ = [];
+  let mainQ = [];
 
   if (fs.existsSync(xlsxPath)) {
     try {
@@ -88,38 +92,30 @@ function loadQuestions() {
       const all1 = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]])
                      .map((r, i) => parseRow(r, i)).filter(q => q.question);
       mainQ = all1.filter(q => q.type !== 'comeback');
-      cbQ   = all1.filter(q => q.type === 'comeback');
-      if (wb.SheetNames[1]) {
-        const cb2 = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]])
-                      .map((r, i) => ({ ...parseRow(r, i) })).filter(q => q.question);
-        cbQ = [...cbQ, ...cb2];
-      }
-      log(`Excel loaded: main=${mainQ.length}, comeback=${cbQ.length}`);
+      log(`Excel loaded: ${mainQ.length} questions`);
     } catch (e) { log(`Excel load failed: ${e.message}`, 'WARN'); }
   }
 
   if (!mainQ.length && fs.existsSync(jsonPath)) {
     try {
       const d = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-      mainQ = d.main  || d.filter?.(q => q.type !== 'comeback') || [];
-      cbQ   = d.comeback || d.filter?.(q => q.type === 'comeback') || [];
-      log(`JSON loaded: main=${mainQ.length}, comeback=${cbQ.length}`);
+      mainQ = d.main || [];
+      log(`JSON loaded: ${mainQ.length} questions`);
     } catch (e) { log(`JSON load failed: ${e.message}`, 'WARN'); }
   }
+
+  // 모든 문제 timeLimit 강제 15초
+  mainQ.forEach(q => { q.timeLimit = QUESTION_TIME; });
 
   if (!mainQ.length) {
     log('Using sample questions', 'WARN');
     mainQ = [
-      { id:1, question:'대한민국의 수도는?', choices:['서울','부산','대구','인천'], answer:0, timeLimit:20, type:'choice', correctAnswers:null },
-      { id:2, question:'1 + 1 = 3 이다',     choices:['O','X'],                    answer:1, timeLimit:15, type:'ox',     correctAnswers:null },
-      { id:3, question:'세계에서 가장 높은 산은? (단답형)', choices:[], answer:null, timeLimit:25, type:'short', correctAnswers:['에베레스트','everest'] },
-      { id:4, question:'골든벨 소감을 한 문장으로 (주관식)', choices:[], answer:null, timeLimit:60, type:'essay', correctAnswers:[] },
-    ];
-    cbQ = [
-      { id:101, question:'[패자부활] 한국의 화폐 단위는?', choices:['달러','원','엔','위안'], answer:1, timeLimit:20, type:'choice', correctAnswers:null },
+      { id:1, question:'대한민국의 수도는?',     choices:['서울','부산','대구','인천'], answer:0, timeLimit:QUESTION_TIME, type:'choice', correctAnswers:null },
+      { id:2, question:'1 + 1 = 3 이다',         choices:['O','X'],                    answer:1, timeLimit:QUESTION_TIME, type:'ox',     correctAnswers:null },
+      { id:3, question:'세계에서 가장 높은 산은?', choices:[], answer:null,             timeLimit:QUESTION_TIME, type:'short', correctAnswers:['에베레스트','everest'] },
     ];
   }
-  return { mainQ, cbQ };
+  return mainQ;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -133,9 +129,6 @@ function saveSession() {
       phase:         state.phase,
       questionIndex: state.questionIndex,
       mainQuestions: state.mainQuestions,
-      comebackPool:  state.comebackPool,
-      currentCB:     state.currentCB,
-      comingback:    state.comingback,
       answersClosed: state.answersClosed,
       gameLog:       state.gameLog,
       players: [...state.players.entries()].map(([sid, p]) => ({ sid, ...p })),
@@ -153,7 +146,6 @@ function loadSession() {
       log('Session expired (>20 min), skipping');
       return false;
     }
-    // FIX: if session was mid-question, force to REVEAL (timer can't be restored)
     let phase = d.phase || 'LOBBY';
     if (phase === 'QUESTION') {
       phase = 'REVEAL';
@@ -162,10 +154,7 @@ function loadSession() {
     state.phase         = phase;
     state.questionIndex = d.questionIndex ?? -1;
     state.mainQuestions = d.mainQuestions || [];
-    state.comebackPool  = d.comebackPool  || [];
-    state.currentCB     = d.currentCB     || null;
-    state.comingback    = d.comingback    || false;
-    state.answersClosed = true;  // always lock after restart
+    state.answersClosed = true;
     state.gameLog       = d.gameLog || [];
     state.players = new Map(
       (d.players || []).map(({ sid, ...p }) => [sid, { ...p, answer: null, answerText: null, answeredAt: null }])
@@ -185,28 +174,25 @@ const state = {
   phase:         'LOBBY',
   questionIndex: -1,
   mainQuestions: [],
-  comebackPool:  [],
-  currentCB:     null,
-  comingback:    false,
   answersClosed: false,
   players:       new Map(),
   ghostPlayers:  new Map(),
   timerInterval: null,
   timerPaused:   false,
-  timerOnEnd:    null,       // stored callback for resume after pause
+  timerOnEnd:    null,
   timeLeft:      0,
   currentTimeLimit: 0,
   gameLog:       [],
   qrPopupVisible: false,
 };
 
-function cq() {
-  return (state.comingback && state.currentCB)
-    ? state.currentCB
-    : state.mainQuestions[state.questionIndex];
-}
+function cq() { return state.mainQuestions[state.questionIndex]; }
+
 function survivors()   { return [...state.players.values()].filter(p => !p.eliminated); }
-function eliminatedP() { return [...state.players.values()].filter(p =>  p.eliminated); }
+
+function roundInfo(idx) {
+  return { round: Math.floor(idx / 15) + 1, qInRound: (idx % 15) + 1 };
+}
 
 function addGameLog(msg) {
   const entry = { ts: new Date().toISOString(), msg };
@@ -218,20 +204,18 @@ function addGameLog(msg) {
 function getAnswerStats() {
   const q = cq(); if (!q || !q.choices.length) return [];
   const stats = new Array(q.choices.length).fill(0);
-  const pool  = state.comingback ? eliminatedP() : survivors();
-  for (const p of pool) if (p.answer !== null && stats[p.answer] !== undefined) stats[p.answer]++;
+  for (const p of survivors()) if (p.answer !== null && stats[p.answer] !== undefined) stats[p.answer]++;
   return stats;
 }
 
 function getTextAnswers() {
-  const pool = state.comingback ? eliminatedP() : survivors();
-  return pool.filter(p => p.answerText !== null).map(p => ({ name: p.name, text: p.answerText }));
+  return survivors().filter(p => p.answerText !== null).map(p => ({ name: p.name, text: p.answerText }));
 }
 
-// Full state for a specific player (for session restore / state_sync)
 function buildStateFor(sid) {
   const p = state.players.get(sid); if (!p) return null;
   const q = cq();
+  const { round, qInRound } = state.questionIndex >= 0 ? roundInfo(state.questionIndex) : { round: 0, qInRound: 0 };
   return {
     phase:          state.phase,
     questionIndex:  state.questionIndex,
@@ -240,13 +224,14 @@ function buildStateFor(sid) {
     totalPlayers:   state.players.size,
     timeLeft:       state.timeLeft,
     timeLimit:      state.currentTimeLimit,
-    comingback:     state.comingback,
     answersClosed:  state.answersClosed,
     eliminated:     p.eliminated,
+    eliminatedAtQuestion: p.eliminatedAtQuestion,
     name:           p.name,
     alreadyAnswered: p.answer !== null || p.answerText !== null,
     myAnswer:       p.answer,
     myAnswerText:   p.answerText,
+    round, qInRound,
     question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
       id: q.id, question: q.question, choices: q.choices,
       timeLimit: q.timeLimit, type: q.type,
@@ -257,35 +242,10 @@ function buildStateFor(sid) {
   };
 }
 
-// Broadcast state to everyone
-function broadcastState() {
-  const q    = cq();
-  const surv = survivors().length;
-  io.emit('state', {
-    phase:          state.phase,
-    questionIndex:  state.questionIndex,
-    totalQuestions: state.mainQuestions.length,
-    survivorCount:  surv,
-    eliminatedCount: state.players.size - surv,
-    totalPlayers:   state.players.size,
-    timeLeft:       state.timeLeft,
-    timeLimit:      state.currentTimeLimit,
-    comingback:     state.comingback,
-    answersClosed:  state.answersClosed,
-    comebackPoolLeft: state.comebackPool.length,
-    question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
-      id: q.id, question: q.question, choices: q.choices,
-      timeLimit: q.timeLimit, type: q.type,
-      answer:         state.phase === 'REVEAL' ? q.answer         : undefined,
-      correctAnswers: state.phase === 'REVEAL' ? q.correctAnswers : undefined,
-    } : null,
-    answerStats: state.phase === 'REVEAL' ? getAnswerStats() : null,
-  });
-}
-
 function buildGenericState() {
   const q    = cq();
   const surv = survivors().length;
+  const { round, qInRound } = state.questionIndex >= 0 ? roundInfo(state.questionIndex) : { round: 0, qInRound: 0 };
   return {
     phase:          state.phase,
     questionIndex:  state.questionIndex,
@@ -295,9 +255,8 @@ function buildGenericState() {
     totalPlayers:   state.players.size,
     timeLeft:       state.timeLeft,
     timeLimit:      state.currentTimeLimit,
-    comingback:     state.comingback,
     answersClosed:  state.answersClosed,
-    comebackPoolLeft: state.comebackPool.length,
+    round, qInRound,
     question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
       id: q.id, question: q.question, choices: q.choices,
       timeLimit: q.timeLimit, type: q.type,
@@ -308,16 +267,19 @@ function buildGenericState() {
   };
 }
 
+function broadcastState() {
+  io.emit('state', buildGenericState());
+}
+
 function startTimer(duration, onEnd) {
   clearInterval(state.timerInterval);
-  state.answersClosed    = false;
   state.timerPaused      = false;
   state.timerOnEnd       = onEnd;
   state.timeLeft         = duration;
   state.currentTimeLimit = duration;
   io.emit('timer', { timeLeft: duration, timeLimit: duration, paused: false });
   state.timerInterval = setInterval(() => {
-    if (state.timerPaused) return;          // skip tick while paused
+    if (state.timerPaused) return;
     state.timeLeft = Math.max(0, state.timeLeft - 1);
     io.emit('timer', { timeLeft: state.timeLeft, timeLimit: duration, paused: false });
     if (state.timeLeft <= 0) { clearInterval(state.timerInterval); onEnd(); }
@@ -393,8 +355,7 @@ app.get('/api/qr', async (req, res) => {
 
 app.get('/api/status', (req, res) => {
   res.json({ phase: state.phase, players: state.players.size, survivors: survivors().length,
-    questions: state.mainQuestions.length, cfUrl, uptime: process.uptime(),
-    comebackPoolLeft: state.comebackPool.length });
+    questions: state.mainQuestions.length, cfUrl, uptime: process.uptime() });
 });
 
 app.get('/api/gamelog', (req, res) => res.json(state.gameLog));
@@ -416,7 +377,6 @@ app.get('/api/monitor/stream', (req, res) => {
   monSubs.add(res); req.on('close', () => monSubs.delete(res));
 });
 
-
 function isAdmin(socket) {
   const ip = socket.handshake.address;
   const isLocal = (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1');
@@ -430,17 +390,14 @@ function isAdmin(socket) {
 io.on('connection', socket => {
   log(`Connected: ${socket.id}`);
 
-  // Send current state
   socket.emit('state', buildGenericState());
   if (cfUrl) socket.emit('cf_url', { url: cfUrl });
   socket.emit('game_log_history', state.gameLog.slice(-100));
 
-  // FIX: Send full player list on connect (host refresh fix)
   socket.emit('player_list', [...state.players.values()].map(p => ({
     name: p.name, eliminated: p.eliminated,
   })));
 
-  // ── Background sync ─────────────────────────────────────
   socket.on('request_state', () => {
     const ps = buildStateFor(socket.id);
     socket.emit('state_sync', ps || buildGenericState());
@@ -479,13 +436,11 @@ io.on('connection', socket => {
 
   // ── Join ─────────────────────────────────────────────────
   socket.on('join', ({ name, uid }) => {
-    // FIX: Strong name validation
     const safeName = (typeof name === 'string' ? name : '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const trimmed = safeName.trim().slice(0, 20);
     if (!trimmed) { socket.emit('join_error', '이름을 입력해주세요.'); return; }
 
     if (state.phase !== 'LOBBY') {
-      // Try ghost rejoin by UID or exact name
       let ghostEntry = null;
       for (const [gUid, ghost] of state.ghostPlayers) {
         if (gUid === uid || ghost.name === trimmed) { ghostEntry = { gUid, ghost }; break; }
@@ -518,21 +473,19 @@ io.on('connection', socket => {
     saveSession();
   });
 
-  // ── Answer (with rate-limit & answersClosed guard) ───────
+  // ── Answer ───────────────────────────────────────────────
   socket.on('answer', ({ choice, text }) => {
     const p = state.players.get(socket.id);
     if (!p || state.phase !== 'QUESTION') return;
     if (state.answersClosed) return;
-    if (state.comingback && !p.eliminated) return;
-    if (!state.comingback &&  p.eliminated) return;
+    if (p.eliminated) return;
 
     const q = cq(); if (!q) return;
     const now = Date.now();
 
-    if (q.type === 'short' || q.type === 'essay') {
+    if (q.type === 'short') {
       const raw = (typeof text === 'string' ? text : '').trim();
       if (!raw) return;
-      // XSS prevention: escape HTML tags
       const safe = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 200);
       const isFirst = p.answerText === null;
       p.answerText = safe; p.answeredAt = now;
@@ -546,147 +499,57 @@ io.on('connection', socket => {
       socket.emit('answer_ok', { choice, changed: !isFirst });
     }
 
-    const pool     = state.comingback ? eliminatedP() : survivors();
-    const answered = pool.filter(pl => pl.answer !== null || pl.answerText !== null).length;
-    io.emit('answer_progress', { answered, total: pool.length });
+    const answered = survivors().filter(pl => pl.answer !== null || pl.answerText !== null).length;
+    io.emit('answer_progress', { answered, total: survivors().length });
   });
 
-  // ── Answer cancel (essay / short only, before answersClosed) ─
+  // ── Answer cancel (short only, before answersClosed) ────
   socket.on('answer_cancel', () => {
     const p = state.players.get(socket.id);
     if (!p || state.phase !== 'QUESTION' || state.answersClosed) return;
-    const q = cq(); if (!q || (q.type !== 'essay' && q.type !== 'short')) return;
+    const q = cq(); if (!q || q.type !== 'short') return;
 
     p.answerText = null; p.answeredAt = null;
     socket.emit('answer_cancelled');
     io.emit('text_answer_cancelled', { sid: socket.id, name: p.name });
 
-    const pool    = state.comingback ? eliminatedP() : survivors();
-    const answered = pool.filter(pl => pl.answer !== null || pl.answerText !== null).length;
-    io.emit('answer_progress', { answered, total: pool.length });
+    const answered = survivors().filter(pl => pl.answer !== null || pl.answerText !== null).length;
+    io.emit('answer_progress', { answered, total: survivors().length });
   });
 
   // ── Host: Start game ─────────────────────────────────────
   socket.on('host_start', () => {
-    if (!isAdmin(socket)) return; /* host_start */
-    const { mainQ, cbQ } = loadQuestions();
-    state.mainQuestions = mainQ; state.comebackPool = cbQ;
+    if (!isAdmin(socket)) return;
+    const mainQ = loadQuestions();
+    state.mainQuestions = mainQ;
     state.questionIndex = -1; state.phase = 'LOBBY';
-    state.comingback = false; state.currentCB = null;
     state.answersClosed = false; state.gameLog = [];
     state.ghostPlayers.clear();
-    for (const p of state.players.values()) { p.eliminated = false; p.answer = null; p.answerText = null; }
-    io.emit('game_started', { total: mainQ.length, cbPool: cbQ.length });
+    for (const p of state.players.values()) {
+      p.eliminated = false; p.answer = null; p.answerText = null;
+      delete p.eliminatedAtQuestion;
+    }
+    io.emit('game_started', { total: mainQ.length });
     broadcastState();
-    addGameLog(`Game started: ${state.players.size} players, ${mainQ.length} Qs, ${cbQ.length} comeback Qs`);
+    addGameLog(`Game started: ${state.players.size} players, ${mainQ.length} Qs`);
     saveSession();
+
+    // 5초 카운트다운 후 첫 문제 자동 시작
+    io.emit('countdown', { from: 5, type: 'game_start' });
+    setTimeout(() => { _doNextQuestion(); }, 5000);
   });
 
   // ── Host: Next question ──────────────────────────────────
   socket.on('host_next', () => {
-    if (!isAdmin(socket)) return; /* host_next */
-    if (state.phase !== 'LOBBY' && state.phase !== 'REVEAL') return;
-    state.questionIndex++;
-    if (state.questionIndex >= state.mainQuestions.length) { _endGame(); return; }
-
-    for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; }
-    state.phase = 'QUESTION'; state.comingback = false;
-    state.currentCB = null; state.answersClosed = false;
-
-    const q = state.mainQuestions[state.questionIndex];
-    io.emit('question', {
-      index: state.questionIndex, total: state.mainQuestions.length,
-      question: q.question, choices: q.choices, type: q.type,
-      timeLimit: q.timeLimit, isComeback: false,
-    });
-    startTimer(q.timeLimit, () => _onTimeUp(q));
-    broadcastState();
-    addGameLog(`Q${state.questionIndex + 1}/${state.mainQuestions.length}: ${q.question}`);
-    saveSession();
+    if (!isAdmin(socket)) return;
+    _doNextQuestion();
   });
 
-  // ── Host: Reveal answer ──────────────────────────────────
-  socket.on('host_reveal', () => {
-    if (!isAdmin(socket)) return; /* host_reveal */
-    if (state.phase !== 'QUESTION') return;
-    const q = cq();
-    if (q && q.type === 'essay') {
-      // Essay needs manual grading — make sure answers are locked first
-      if (!state.answersClosed) {
-        clearInterval(state.timerInterval);
-        state.answersClosed = true;
-        io.emit('time_up');
-        io.emit('answers_locked', { type: 'essay', answers: getTextAnswers() });
-      }
-      socket.emit('essay_need_manual');
-      return;
-    }
-    _doReveal();
-  });
-
-  // ── Host: Essay manual grading ───────────────────────────
-  socket.on('host_essay_reveal', ({ passedNames }) => {
-    if (!isAdmin(socket)) return; /* host_essay_reveal */
-    if (state.phase !== 'QUESTION') return;
-    clearInterval(state.timerInterval);
-    state.answersClosed = true;
-
-    const passSet = new Set(passedNames || []);
-    const pool    = state.comingback ? eliminatedP() : survivors();
-    const revived = [], failElim = [];
-
-    for (const [sid, p] of state.players) {
-      if (!pool.includes(p)) continue;
-      if (passSet.has(p.name)) {
-        if (state.comingback) p.eliminated = false;
-        revived.push(p.name);
-      } else {
-        if (!state.comingback) p.eliminated = true;
-        failElim.push({ name: p.name, sid });
-      }
-    }
-
-    state.phase = 'REVEAL';
-    if (state.comingback) {
-      state.comingback = false; state.currentCB = null;
-      io.emit('comeback_result', { type:'essay', revived, stillElim: failElim.map(e=>e.name), survivorCount: survivors().length });
-      addGameLog(`Essay comeback: revived ${revived.length}`);
-    } else {
-      io.emit('reveal', { type:'essay', eliminated: failElim.map(e=>e.name), survivors: revived, survivorCount: revived.length, correctAnswer: null, correctAnswers: null, stats: [] });
-      for (const { sid } of failElim) if (sid) io.to(sid).emit('eliminated');
-      addGameLog(`Essay reveal: passed ${revived.length}, out ${failElim.length}`);
-    }
-    broadcastState(); saveSession();
-  });
-
-  // ── Host: Comeback ───────────────────────────────────────
-  socket.on('host_comeback', () => {
-    if (!isAdmin(socket)) return; /* host_comeback */
-    if (state.phase !== 'REVEAL') return;
-    if (!eliminatedP().length) { socket.emit('comeback_error', 'No eliminated players.'); return; }
-    if (!state.comebackPool.length) { socket.emit('comeback_error', 'No comeback questions available.\nAdd questions to Excel Sheet2.'); return; }
-
-    state.currentCB = state.comebackPool.shift();
-    for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; }
-    state.phase = 'QUESTION'; state.comingback = true; state.answersClosed = false;
-
-    const q = state.currentCB;
-    io.emit('question', {
-      index: state.questionIndex, total: state.mainQuestions.length,
-      question: q.question, choices: q.choices, type: q.type,
-      timeLimit: q.timeLimit, isComeback: true,
-    });
-    io.emit('comeback_start', { count: eliminatedP().length, cbPoolLeft: state.comebackPool.length });
-    startTimer(q.timeLimit, () => _onTimeUp(q));
-    broadcastState();
-    addGameLog(`Comeback: ${eliminatedP().length} challengers, ${state.comebackPool.length} Qs left`);
-  });
-
-  socket.on('host_end', () => { if(!isAdmin(socket)) return; _endGame(); });
+  socket.on('host_end', () => { if (!isAdmin(socket)) return; _endGame(); });
 
   // ── Host: Timer pause / resume ─────────────────────────
   socket.on('host_pause_timer', () => {
-    if (!isAdmin(socket)) return; /* host_pause_timer */
+    if (!isAdmin(socket)) return;
     if (state.phase !== 'QUESTION' || state.timerPaused || state.answersClosed) return;
     state.timerPaused = true;
     io.emit('timer_paused', { timeLeft: state.timeLeft, timeLimit: state.currentTimeLimit });
@@ -694,7 +557,7 @@ io.on('connection', socket => {
   });
 
   socket.on('host_resume_timer', () => {
-    if (!isAdmin(socket)) return; /* host_resume_timer */
+    if (!isAdmin(socket)) return;
     if (state.phase !== 'QUESTION' || !state.timerPaused) return;
     state.timerPaused = false;
     io.emit('timer_resumed', { timeLeft: state.timeLeft, timeLimit: state.currentTimeLimit });
@@ -703,35 +566,35 @@ io.on('connection', socket => {
 
   // ── Host: QR popup on display ──────────────────────────
   socket.on('host_qr_show', () => {
-    if (!isAdmin(socket)) return; /* host_qr_show */
+    if (!isAdmin(socket)) return;
     state.qrPopupVisible = true;
     io.emit('show_qr_popup');
     log('QR popup shown');
   });
 
   socket.on('host_qr_hide', () => {
-    if (!isAdmin(socket)) return; /* host_qr_hide */
+    if (!isAdmin(socket)) return;
     state.qrPopupVisible = false;
     io.emit('hide_qr_popup');
     log('QR popup hidden');
   });
 
   socket.on('host_reset', () => {
-    if (!isAdmin(socket)) return; /* host_reset */
+    if (!isAdmin(socket)) return;
     clearInterval(state.timerInterval);
-    Object.assign(state, { phase:'LOBBY', questionIndex:-1, comingback:false, currentCB:null,
+    Object.assign(state, { phase:'LOBBY', questionIndex:-1,
       answersClosed:false, timeLeft:0, currentTimeLimit:0, gameLog:[] });
     state.players.clear(); state.ghostPlayers.clear();
-    state.mainQuestions = []; state.comebackPool = [];
+    state.mainQuestions = [];
     try { if (fs.existsSync(SESSION_PATH)) fs.unlinkSync(SESSION_PATH); } catch {}
     io.emit('reset'); broadcastState(); log('Game reset');
   });
 
   socket.on('host_reload_questions', () => {
-    if (!isAdmin(socket)) return; /* host_reload_questions */
-    const { mainQ, cbQ } = loadQuestions();
-    state.mainQuestions = mainQ; state.comebackPool = cbQ;
-    socket.emit('questions_reloaded', { main: mainQ.length, comeback: cbQ.length });
+    if (!isAdmin(socket)) return;
+    const mainQ = loadQuestions();
+    state.mainQuestions = mainQ;
+    socket.emit('questions_reloaded', { main: mainQ.length });
   });
 
   socket.on('disconnect', () => {
@@ -749,34 +612,56 @@ io.on('connection', socket => {
 // ══════════════════════════════════════════════════════════════
 //  INTERNAL HELPERS
 // ══════════════════════════════════════════════════════════════
+function _doNextQuestion() {
+  if (state.phase !== 'LOBBY' && state.phase !== 'REVEAL') return;
+  state.questionIndex++;
+  if (state.questionIndex >= state.mainQuestions.length) { _endGame(); return; }
+
+  for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; }
+  state.phase = 'QUESTION'; state.answersClosed = false;
+
+  const q = state.mainQuestions[state.questionIndex];
+  const { round, qInRound } = roundInfo(state.questionIndex);
+
+  io.emit('question', {
+    index: state.questionIndex, total: state.mainQuestions.length,
+    question: q.question, choices: q.choices, type: q.type,
+    timeLimit: QUESTION_TIME, round, qInRound,
+  });
+  startTimer(QUESTION_TIME, () => _onTimeUp(q));
+  broadcastState();
+  addGameLog(`[${round}회차-${qInRound}번] Q${state.questionIndex + 1}: ${q.question}`);
+  saveSession();
+}
+
 function _onTimeUp(q) {
   state.answersClosed = true;
   io.emit('time_up');
 
-  if (q.type === 'essay') {
-    const answers = getTextAnswers();
-    io.emit('answers_locked', { type: 'essay', answers });
-    log(`Essay locked: ${answers.length} submitted`);
-  } else if (q.type === 'short') {
-    const answers = getTextAnswers();
-    io.emit('answers_locked', { type: 'short', answers });
+  if (q.type === 'short') {
+    io.emit('answers_locked', { type: 'short', answers: getTextAnswers() });
   } else {
     io.emit('answers_locked', { type: q.type, answers: [] });
   }
+
+  // 3초 카운트다운 후 자동 정답 공개
+  io.emit('countdown', { from: 3, type: 'reveal' });
+  setTimeout(() => { _doReveal(); }, REVEAL_DELAY);
 }
 
 function _doReveal() {
+  if (state.phase !== 'QUESTION') return; // 중복 실행 방지
+
   clearInterval(state.timerInterval);
   state.answersClosed = true;
 
-  const q        = cq();
-  const pool     = state.comingback ? eliminatedP() : survivors();
-  const newElim  = [], correct = [];
+  const q       = cq();
+  const pool    = survivors();
+  const newElim = [], correct = [];
 
   for (const p of pool) {
     let ok = false;
     if (q.type === 'short') {
-      // Lenient matching: strip spaces, punctuation; lowercase both sides
       const normalize = s => s.toLowerCase().replace(/[\s\.,\!\?]/g, '');
       const given = normalize(p.answerText || '');
       ok = (q.correctAnswers || []).some(a => {
@@ -788,10 +673,10 @@ function _doReveal() {
     }
     const sid = [...state.players.entries()].find(([, pl]) => pl === p)?.[0];
     if (ok) {
-      if (state.comingback) p.eliminated = false;
       correct.push(p.name);
     } else {
-      if (!state.comingback) p.eliminated = true;
+      p.eliminated = true;
+      p.eliminatedAtQuestion = state.questionIndex + 1;
       newElim.push({ name: p.name, sid });
     }
   }
@@ -799,23 +684,28 @@ function _doReveal() {
   state.phase = 'REVEAL';
   const payload = { correctAnswer: q.answer, correctAnswers: q.correctAnswers, stats: getAnswerStats(), type: q.type };
 
-  if (state.comingback) {
-    state.comingback = false; state.currentCB = null;
-    io.emit('comeback_result', { ...payload, revived: correct, stillElim: newElim.map(e => e.name), survivorCount: survivors().length });
-    addGameLog(`Comeback result: revived ${correct.length}`);
-  } else {
-    io.emit('reveal', { ...payload, eliminated: newElim.map(e => e.name), survivors: correct, survivorCount: correct.length });
-    for (const { sid } of newElim) if (sid) io.to(sid).emit('eliminated');
-    addGameLog(`Reveal [${q.type}]: survived ${correct.length}, out ${newElim.length}`);
+  io.emit('reveal', { ...payload, eliminated: newElim.map(e => e.name), survivors: correct, survivorCount: correct.length });
+
+  // 각 탈락자에게 서버 시간 잠금 정보 전송
+  for (const { sid } of newElim) {
+    if (sid) io.to(sid).emit('eliminated', {
+      eliminatedAtQuestion: state.questionIndex + 1,
+      serverStartTime:      SERVER_START_TIME,
+      serverEliminatedTime: new Date().toISOString(),
+    });
   }
+
+  addGameLog(`Reveal [${q.type}]: survived ${correct.length}, out ${newElim.length}`);
   broadcastState(); saveSession();
 }
 
 function _endGame() {
-  const winners = survivors().map(p => p.name);
-  state.phase   = 'GAMEOVER';
-  io.emit('game_over', { winners }); broadcastState();
-  addGameLog(`Game over - winner: ${winners.join(', ') || 'none'}`);
+  const winners      = survivors().map(p => p.name);
+  const allEliminated = winners.length === 0;
+  state.phase = 'GAMEOVER';
+  io.emit('game_over', { winners, allEliminated });
+  broadcastState();
+  addGameLog(`Game over - ${allEliminated ? '전원 탈락' : 'winners: ' + winners.join(', ')}`);
   try { if (fs.existsSync(SESSION_PATH)) fs.unlinkSync(SESSION_PATH); } catch {}
 }
 
@@ -825,7 +715,7 @@ function _endGame() {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   log('='.repeat(52));
-  log(`  Golden Bell Quiz Server v4.0  |  Port: ${PORT}`);
+  log(`  Speed Golden Bell Server v5.0  |  Port: ${PORT}`);
   log('='.repeat(52));
   log(`  Host:        http://localhost:${PORT}/host.html`);
   log(`  Display:     http://localhost:${PORT}/display.html`);
