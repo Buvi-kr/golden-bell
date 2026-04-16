@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>골든벨 v4 — 진행자</title>
+<title>⚡ 스피드 골든벨 v5 — 진행자</title>
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg0:#060d1a;--bg1:#0f172a;--bg2:#1e293b;--bg3:#334155;
-  --gold:#f59e0b;--green:#4ade80;--red:#f87171;--blue:#60a5fa;--purple:#a78bfa;
+  --orange:#f97316;--gold:#f59e0b;--green:#4ade80;--red:#f87171;--blue:#60a5fa;--purple:#a78bfa;
   --t1:#f1f5f9;--t2:#94a3b8;--t3:#475569;
 }
 body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg0);color:var(--t1);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
 
-header{background:var(--bg1);border-bottom:2px solid var(--gold);padding:8px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;height:50px;}
-header h1{font-size:16px;color:var(--gold);}
+header{background:var(--bg1);border-bottom:2px solid var(--orange);padding:8px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;height:50px;}
+header h1{font-size:16px;color:var(--orange);}
 .phase-badge{padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .ph-LOBBY{background:#1e3a2f;color:#4ade80;} .ph-QUESTION{background:#1a3a1a;color:#86efac;}
 .ph-REVEAL{background:#3b1f7a;color:#c4b5fd;} .ph-GAMEOVER{background:#7c2d12;color:#fed7aa;}
@@ -41,7 +41,7 @@ header h1{font-size:16px;color:var(--gold);}
 .qr-wrap img{width:140px;height:140px;border-radius:8px;background:#fff;padding:3px;}
 #qrPh{width:140px;height:140px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:10px;margin:0 auto;text-align:center;padding:10px;}
 .url-inp{width:100%;background:var(--bg0);border:1px solid var(--bg3);border-radius:5px;padding:4px 7px;font-size:10px;color:var(--blue);outline:none;margin-top:5px;}
-.url-inp:focus{border-color:var(--gold);}
+.url-inp:focus{border-color:var(--orange);}
 
 /* 버튼 */
 .btn{border:none;border-radius:7px;font-weight:700;cursor:pointer;transition:all .12s;padding:8px;}
@@ -49,24 +49,33 @@ header h1{font-size:16px;color:var(--gold);}
 .btn:active:not(:disabled){transform:scale(.97);}
 .btn-s{background:#16a34a;color:#fff;font-size:12px;}
 .btn-n{background:#2563eb;color:#fff;font-size:12px;}
-.btn-rv{background:#d97706;color:#fff;font-size:12px;}
-.btn-cb{background:#7c3aed;color:#fff;font-size:11px;}
 .btn-end{background:#dc2626;color:#fff;font-size:11px;}
 .btn-rst{background:var(--bg3);color:var(--t2);font-size:10px;}
-.btn-essay{background:#0891b2;color:#fff;font-size:11px;}
 .btn-w{width:100%;margin-bottom:4px;}
 
+/* 회차 표시 */
+.round-indicator{
+  text-align:center;padding:7px;border-radius:7px;
+  background:var(--bg0);border:1px solid var(--bg3);
+  font-size:14px;font-weight:800;color:var(--orange);margin-bottom:6px;
+  letter-spacing:.5px;
+}
+
 /* 타이머 */
-.timer-big{font-size:44px;font-weight:900;text-align:center;color:var(--gold);line-height:1;}
+.timer-big{font-size:44px;font-weight:900;text-align:center;color:var(--orange);line-height:1;}
+.timer-big.amber{color:var(--gold);}
 .timer-big.urgent{color:var(--red);animation:tp .4s ease-in-out infinite;}
 @keyframes tp{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
+/* 카운트다운 오버레이 */
+@keyframes cdpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+
 /* 답변 바 */
 .ans-bar{background:var(--bg0);border-radius:4px;height:7px;overflow:hidden;margin:4px 0;}
-.ans-fill{height:100%;background:var(--gold);border-radius:4px;transition:width .5s;}
+.ans-fill{height:100%;background:var(--orange);border-radius:4px;transition:width .5s;}
 
 /* 문제 */
-.q-prev{background:var(--bg0);border-left:3px solid var(--gold);border-radius:6px;padding:9px;margin-bottom:7px;}
+.q-prev{background:var(--bg0);border-left:3px solid var(--orange);border-radius:6px;padding:9px;margin-bottom:7px;}
 .q-tag{display:inline-block;background:var(--bg3);border-radius:3px;padding:1px 5px;font-size:9px;color:var(--t2);margin-bottom:3px;}
 .q-text-p{font-size:14px;font-weight:700;line-height:1.4;}
 .choices-g{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
@@ -101,23 +110,13 @@ header h1{font-size:16px;color:var(--gold);}
 
 /* 진행률 */
 .prog{background:var(--bg0);border-radius:3px;height:4px;overflow:hidden;margin:3px 0;}
-.prog-f{height:100%;background:var(--gold);border-radius:3px;transition:width .4s;}
+.prog-f{height:100%;background:var(--orange);border-radius:3px;transition:width .4s;}
 
-/* 패자부활전 배너 */
-.cb-banner{background:#1e1b4b;border:2px solid var(--purple);border-radius:7px;padding:7px;text-align:center;font-size:11px;font-weight:700;color:var(--purple);}
-
-/* 단답형 / 주관식 패널 */
+/* 단답형 패널 */
 .text-ans-panel{background:var(--bg0);border-radius:7px;max-height:200px;overflow-y:auto;}
 .ta-item{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--bg3);gap:7px;}
 .ta-name{font-size:10px;font-weight:700;color:var(--t1);flex-shrink:0;min-width:48px;}
 .ta-text{font-size:10px;color:var(--t2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.ta-btns{display:flex;gap:3px;flex-shrink:0;}
-.ep-pass{background:#16a34a;color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;cursor:pointer;}
-.ep-fail{background:#dc2626;color:#fff;border:none;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;cursor:pointer;}
-.ep-pass.sel{outline:2px solid #4ade80;outline-offset:1px;}
-.ep-fail.sel{outline:2px solid #f87171;outline-offset:1px;}
-
-/* 단답형 결과 마크 */
 .sa-mark{font-size:12px;flex-shrink:0;}
 
 /* 잠금 상태 배너 */
@@ -145,7 +144,7 @@ header h1{font-size:16px;color:var(--gold);}
 <body>
 
 <header>
-  <h1>🔔 골든벨 v4 — 진행자</h1>
+  <h1>⚡ 스피드 골든벨 v5 — 진행자</h1>
   <div style="display:flex;align-items:center;gap:8px;">
     <button class="btn btn-rst" style="font-size:10px;padding:4px 10px;" onclick="openDisplay()">📺 현황판</button>
     <button class="btn btn-rst" style="font-size:10px;padding:4px 10px;" onclick="openParticipant()">📱 참여자</button>
@@ -153,6 +152,12 @@ header h1{font-size:16px;color:var(--gold);}
     <span id="phaseBadge" class="phase-badge ph-LOBBY">대기중</span>
   </div>
 </header>
+
+<!-- 카운트다운 오버레이 -->
+<div id="countdownOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,13,26,.92);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+  <div id="cdNum" style="font-size:120px;font-weight:900;color:var(--gold);line-height:1;animation:cdpulse .9s ease-in-out infinite;"></div>
+  <div id="cdLabel" style="font-size:18px;color:var(--t2);"></div>
+</div>
 
 <div class="layout">
 <!-- ══ 왼쪽 ══════════════════════════════════════════════════ -->
@@ -181,7 +186,6 @@ header h1{font-size:16px;color:var(--gold);}
         <span>진행률</span><span id="progTxt">0/0</span>
       </div>
       <div class="prog"><div class="prog-f" id="progF" style="width:0%"></div></div>
-      <div style="font-size:9px;color:var(--t3);margin-top:2px;">패자부활전 남은 문제: <b id="cbLeft" style="color:var(--purple)">0</b>개</div>
     </div>
   </div>
 
@@ -204,37 +208,29 @@ header h1{font-size:16px;color:var(--gold);}
   <!-- 제어 버튼 -->
   <div class="card">
     <div class="ct">🎮 게임 제어</div>
-    <!-- 핵심 버튼: 크게 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-      <button class="btn btn-n"  id="btnN"  onclick="hostNext()"   disabled style="font-size:15px;padding:14px;font-weight:800;">▶ 다음 문제</button>
-      <button class="btn btn-rv" id="btnRv" onclick="hostReveal()" disabled style="font-size:15px;padding:14px;font-weight:800;">✅ 정답 공개</button>
-    </div>
-    <!-- 2열 보조 버튼 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-bottom:5px;">
-      <button class="btn btn-s"   id="btnS"  onclick="hostStart()">🚀 시작</button>
-      <button class="btn btn-cb"  id="btnCB" onclick="hostComeback()" disabled>🔄 부활전</button>
-      <button class="btn btn-end" id="btnE"  onclick="confirmEnd()"  disabled>🏁 종료</button>
-      <button class="btn btn-rst" id="btnReset" onclick="confirmReset()">🔁 초기화</button>
-    </div>
-    <!-- 3열 기능 버튼 -->
+    <!-- 회차 표시 -->
+    <div class="round-indicator" id="roundIndicator">📍 —</div>
+    <!-- 핵심 버튼: 다음 문제 (전체 너비) -->
+    <button class="btn btn-n btn-w" id="btnN" onclick="hostNext()" disabled
+      style="font-size:16px;padding:15px;font-weight:900;margin-bottom:6px;">▶ 다음 문제</button>
+    <!-- 보조 버튼 3열 -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:5px;">
-      <button class="btn btn-essay" id="btnEssay" onclick="commitEssay()" disabled>📝 주관식 확정</button>
-      <button class="btn" id="btnPause" onclick="togglePause()"
-        style="background:#0369a1;color:#fff;font-size:11px;" disabled>⏸ 타이머 일시정지</button>
-      <button class="btn" id="btnQrPopup" onclick="toggleQrPopup()"
-        style="background:#4338ca;color:#fff;font-size:11px;">📱 QR 팝업</button>
+      <button class="btn btn-s"   id="btnS"     onclick="hostStart()">🚀 시작</button>
+      <button class="btn btn-end" id="btnE"     onclick="confirmEnd()"   disabled>🏁 종료</button>
+      <button class="btn btn-rst" id="btnReset" onclick="confirmReset()">🔄 초기화</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-      <button class="btn btn-rst" style="font-size:10px;" onclick="reloadQ()">📂 문제 다시 로드</button>
-      <button class="btn btn-rst" style="font-size:10px;" onclick="openDisplay()">📺 현황판 열기</button>
+    <!-- 유틸리티 버튼 3열 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;">
+      <button class="btn" id="btnPause" onclick="togglePause()"
+        style="background:#0369a1;color:#fff;font-size:10px;" disabled>⏸ 일시정지</button>
+      <button class="btn" id="btnQrPopup" onclick="toggleQrPopup()"
+        style="background:#4338ca;color:#fff;font-size:10px;">📱 QR 팝업</button>
+      <button class="btn btn-rst" style="font-size:10px;" onclick="reloadQ()">📂 문제 로드</button>
     </div>
   </div>
 
-  <!-- 패자부활전 배너 -->
-  <div class="cb-banner" id="cbBanner" style="display:none">🔄 패자부활전 진행 중 — 탈락자만 답변 가능</div>
-
   <!-- 잠금 배너 -->
-  <div class="locked-banner" id="lockedBanner" style="display:none">🔒 답변 마감됨 — 정답 공개 버튼을 누르세요</div>
+  <div class="locked-banner" id="lockedBanner" style="display:none">🔒 답변 마감 — 정답 자동 공개 중...</div>
 
   <!-- 타이머 + 답변 현황 -->
   <div style="display:grid;grid-template-columns:120px 1fr;gap:7px;">
@@ -263,15 +259,6 @@ header h1{font-size:16px;color:var(--gold);}
   <div class="card" id="shortPanel" style="display:none;">
     <div class="ct">📝 단답형 제출 현황</div>
     <div class="text-ans-panel" id="shortList"></div>
-  </div>
-
-  <!-- 주관식 패널 -->
-  <div class="card" id="essayPanel" style="display:none;">
-    <div class="ct">📝 주관식 답변 — <span id="essayPanelStatus" style="color:var(--gold)">타이머 진행 중</span></div>
-    <div class="text-ans-panel" id="essayList"></div>
-    <button class="btn btn-essay btn-w" id="essayCommitBtn" onclick="commitEssay()" style="margin-top:5px;font-size:11px;" disabled>
-      🔒 답변 마감 후 활성화됩니다
-    </button>
   </div>
 
   <!-- 차트 -->
@@ -307,7 +294,7 @@ header h1{font-size:16px;color:var(--gold);}
       <button class="btn btn-rst" style="font-size:9px;padding:5px" onclick="sfx('correct')">✅ 정답</button>
       <button class="btn btn-rst" style="font-size:9px;padding:5px" onclick="sfx('wrong')">❌ 오답</button>
       <button class="btn btn-rst" style="font-size:9px;padding:5px" onclick="sfx('win')">🏆 우승</button>
-      <button class="btn btn-rst" style="font-size:9px;padding:5px" onclick="sfx('comeback')">🔄 부활</button>
+      <button class="btn btn-rst" style="font-size:9px;padding:5px" onclick="sfx('tick')">🔔 틱</button>
     </div>
   </div>
 </div>
@@ -316,7 +303,7 @@ header h1{font-size:16px;color:var(--gold);}
 <!-- 우승자 팝업 -->
 <div class="w-overlay" id="wOverlay">
   <div class="w-box">
-    <div class="w-title">🏆 골든벨!</div>
+    <div class="w-title" id="wTitle">🔔 골든벨!</div>
     <div class="w-names" id="wNames"></div>
     <button class="btn btn-s" style="margin-top:16px;width:auto;padding:9px 26px;" onclick="document.getElementById('wOverlay').style.display='none'">닫기</button>
   </div>
@@ -326,7 +313,6 @@ header h1{font-size:16px;color:var(--gold);}
 <script>
 const socket = io({ transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000, reconnectionDelayMax: 8000 });
 
-// 백그라운드 복귀 동기화
 document.addEventListener('visibilitychange', () => { if (!document.hidden && socket.connected) socket.emit('request_state'); });
 window.addEventListener('focus', () => { if (socket.connected) socket.emit('request_state'); });
 socket.on('state_sync', data => { if (data) { updateStats(data); updateButtons(data.phase||currentPhase); } });
@@ -334,11 +320,9 @@ socket.on('state_sync', data => { if (data) { updateStats(data); updateButtons(d
 const players = new Map();
 let currentPhase  = 'LOBBY';
 let currentQ      = null;
-let isComeback    = false;
-let ansChart      = null;
 let answersClosed = false;
+let ansChart      = null;
 const LABELS = ['①','②','③','④'];
-const essayPassed = new Set();  // names that passed
 
 // ══ Web Audio ═════════════════════════════════════════════════
 const AC = window.AudioContext || window.webkitAudioContext;
@@ -352,7 +336,6 @@ function sfx(type) {
     if (type==='correct') { [523,659,784,1047].forEach((f,i)=>{const o=actx.createOscillator();o.connect(g);o.frequency.setValueAtTime(f,t+i*.1);g.gain.setValueAtTime(.2,t+i*.1);g.gain.exponentialRampToValueAtTime(.001,t+i*.1+.22);o.start(t+i*.1);o.stop(t+i*.1+.22);}); }
     else if (type==='wrong') { const o=actx.createOscillator();o.type='sawtooth';o.connect(g);o.frequency.setValueAtTime(350,t);o.frequency.exponentialRampToValueAtTime(80,t+.5);g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.001,t+.5);o.start(t);o.stop(t+.5); }
     else if (type==='win') { [[523,.0],[659,.15],[784,.3],[1047,.5],[784,.7],[1047,.9],[1319,1.1]].forEach(([f,d])=>{const o=actx.createOscillator();o.connect(g);o.frequency.setValueAtTime(f,t+d);g.gain.setValueAtTime(.2,t+d);g.gain.exponentialRampToValueAtTime(.001,t+d+.3);o.start(t+d);o.stop(t+d+.3);}); }
-    else if (type==='comeback') { for(let i=0;i<6;i++){const o=actx.createOscillator();o.type='square';o.connect(g);o.frequency.setValueAtTime(180+i*35,t+i*.1);g.gain.setValueAtTime(.12,t+i*.1);g.gain.exponentialRampToValueAtTime(.001,t+i*.1+.07);o.start(t+i*.1);o.stop(t+i*.1+.07);} }
     else if (type==='tick') { const o=actx.createOscillator();o.connect(g);o.frequency.setValueAtTime(880,t);g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.001,t+.06);o.start(t);o.stop(t+.06); }
   } catch {}
 }
@@ -403,7 +386,6 @@ socket.on('cf_url', ({ url }) => {
   generateQR(); toast('🌐 터널 URL 감지됨');
 });
 
-// FIX: player_list 수신 시 목록 복구
 socket.on('player_list', (list) => {
   players.clear();
   list.forEach(p => players.set(p.name, { name: p.name, eliminated: p.eliminated }));
@@ -417,81 +399,51 @@ socket.on('state', data => {
   currentPhase  = data.phase;
   answersClosed = !!data.answersClosed;
   updateStats(data); updateButtons(data.phase);
-  isComeback = data.comingback || false;
-  document.getElementById('cbBanner').style.display = isComeback ? 'block' : 'none';
-  document.getElementById('cbLeft').textContent     = data.comebackPoolLeft || 0;
   document.getElementById('lockedBanner').style.display = (answersClosed && data.phase==='QUESTION') ? 'block' : 'none';
   if (data.question) renderQuestion(data.question, data.phase==='REVEAL'?data.question.answer:undefined, data.question.correctAnswers);
+  if (data.round && data.qInRound) {
+    document.getElementById('roundIndicator').textContent = `📍 ${data.round}회차 — ${data.qInRound}번째 문제`;
+  }
 });
 
-socket.on('game_started', ({ total, cbPool }) => {
-  toast(`🎮 시작! 일반 ${total}개, 패자부활전 ${cbPool}개`);
+socket.on('game_started', ({ total }) => {
+  toast(`⚡ 스피드 골든벨 시작! 총 ${total}문제 — 5초 후 시작합니다`);
   players.forEach(p => p.eliminated = false);
   renderPlayers(); sfx('correct');
 });
 
 socket.on('question', q => {
-  currentQ = q; isComeback = q.isComeback || false; answersClosed = false;
-  essayPassed.clear();
+  currentQ = q; answersClosed = false;
   document.getElementById('chartCard').style.display  = 'none';
   document.getElementById('lockedBanner').style.display = 'none';
   document.getElementById('shortPanel').style.display = q.type==='short' ? 'block' : 'none';
-  document.getElementById('essayPanel').style.display = q.type==='essay' ? 'block' : 'none';
   document.getElementById('shortList').innerHTML = '';
-  document.getElementById('essayList').innerHTML = '';
   document.getElementById('ansC').textContent = '0';
   document.getElementById('actC').textContent = '0';
   document.getElementById('ansBar').style.width = '0%';
-  document.getElementById('ansNote').textContent = isComeback ? '패자부활전 — 탈락자만 답변' : (q.type==='essay' ? '주관식 진행 중...' : '답변 대기');
-  document.getElementById('cbBanner').style.display = isComeback ? 'block' : 'none';
-
-  // Essay: commit button disabled until time_up
-  if (q.type === 'essay') {
-    document.getElementById('essayCommitBtn').disabled = true;
-    document.getElementById('essayCommitBtn').textContent = '🔒 답변 마감 후 활성화됩니다';
-    document.getElementById('essayPanelStatus').textContent = '타이머 진행 중';
-    document.getElementById('essayPanelStatus').style.color = 'var(--gold)';
-    document.getElementById('btnEssay').disabled = true;
+  document.getElementById('ansNote').textContent = q.type==='short' ? '단답형 진행 중...' : '답변 대기';
+  if (q.round && q.qInRound) {
+    document.getElementById('roundIndicator').textContent = `📍 ${q.round}회차 — ${q.qInRound}번째 문제`;
   }
-
   renderQuestion(q); updateButtons('QUESTION');
 });
 
 socket.on('timer', ({ timeLeft }) => {
   const el = document.getElementById('timerD');
   el.textContent = timeLeft;
-  el.className   = 'timer-big' + (timeLeft<=5?' urgent':'');
+  el.className   = 'timer-big' + (timeLeft<=5?' urgent':timeLeft<=8?' amber':'');
   if (timeLeft<=5 && timeLeft>0) sfx('tick');
 });
 
 socket.on('time_up', () => {
   answersClosed = true;
   document.getElementById('lockedBanner').style.display = 'block';
-  toast('⏰ 시간 종료! 정답 공개 버튼을 누르세요.', 5000);
+  document.getElementById('lockedBanner').textContent = '🔒 답변 마감 — 정답 자동 공개 중...';
 });
 
-// FIX: answers_locked — essay commit button only enabled after lock
 socket.on('answers_locked', ({ type, answers }) => {
   answersClosed = true;
   document.getElementById('lockedBanner').style.display = 'block';
-
-  if (type === 'essay' && answers) {
-    // Populate essay list (in case answers came in after lock)
-    const list = document.getElementById('essayList');
-    answers.forEach(({ name, text }) => {
-      if (!list.querySelector(`[data-name="${name}"]`)) {
-        const d = createEssayItem(name, text);
-        list.appendChild(d);
-      }
-    });
-    // Now activate commit button
-    document.getElementById('essayCommitBtn').disabled = false;
-    document.getElementById('essayCommitBtn').textContent = '✅ 통과/탈락 선택 후 [확정]을 누르세요';
-    document.getElementById('essayPanelStatus').textContent = '답변 마감 — 채점 중';
-    document.getElementById('essayPanelStatus').style.color = 'var(--green)';
-    document.getElementById('btnEssay').disabled = false;
-    toast('🔒 주관식 답변 마감! 통과자를 선택하고 [주관식 확정] 버튼을 누르세요.', 6000);
-  }
 
   if (type === 'short' && answers) {
     const list = document.getElementById('shortList');
@@ -508,66 +460,42 @@ socket.on('answers_locked', ({ type, answers }) => {
   updateButtons('QUESTION');
 });
 
+socket.on('countdown', ({ from, type }) => {
+  const overlay = document.getElementById('countdownOverlay');
+  const numEl   = document.getElementById('cdNum');
+  const lblEl   = document.getElementById('cdLabel');
+  lblEl.textContent = type === 'game_start' ? '⚡ 게임 시작!' : '✅ 정답 공개!';
+  overlay.style.display = 'flex';
+  let n = from;
+  numEl.textContent = n;
+  sfx('tick');
+  const iv = setInterval(() => {
+    n--;
+    if (n <= 0) { clearInterval(iv); overlay.style.display = 'none'; return; }
+    numEl.textContent = n;
+    sfx('tick');
+  }, 1000);
+});
+
 socket.on('answer_progress', ({ answered, total }) => {
   document.getElementById('ansC').textContent = answered;
   document.getElementById('actC').textContent = total;
   document.getElementById('ansBar').style.width = total>0 ? (answered/total*100)+'%' : '0%';
 });
 
-// Real-time text answers
 socket.on('text_answer_in', ({ sid, name, text }) => {
-  if (!currentQ) return;
-
-  if (currentQ.type === 'short') {
-    const list = document.getElementById('shortList');
-    const old  = list.querySelector(`[data-name="${name}"]`);
-    if (old) { old.querySelector('.ta-text').textContent = text; return; }
-    const d = document.createElement('div');
-    d.className='ta-item'; d.setAttribute('data-name', name);
-    d.innerHTML = `<span class="ta-name">${name}</span><span class="ta-text">${text}</span><span class="sa-mark"></span>`;
-    list.appendChild(d);
-  } else if (currentQ.type === 'essay') {
-    const list = document.getElementById('essayList');
-    const old  = list.querySelector(`[data-name="${name}"]`);
-    if (old) { old.querySelector('.ta-text').textContent = text; return; }
-    const d = createEssayItem(name, text);
-    list.appendChild(d);
-  }
+  if (!currentQ || currentQ.type !== 'short') return;
+  const list = document.getElementById('shortList');
+  const old  = list.querySelector(`[data-name="${name}"]`);
+  if (old) { old.querySelector('.ta-text').textContent = text; return; }
+  const d = document.createElement('div');
+  d.className='ta-item'; d.setAttribute('data-name', name);
+  d.innerHTML = `<span class="ta-name">${name}</span><span class="ta-text">${text}</span><span class="sa-mark"></span>`;
+  list.appendChild(d);
 });
 
 socket.on('text_answer_cancelled', ({ name }) => {
   document.querySelector(`[data-name="${name}"]`)?.remove();
-  essayPassed.delete(name);
-});
-
-function createEssayItem(name, text) {
-  const d = document.createElement('div');
-  d.className = 'ta-item'; d.setAttribute('data-name', name);
-  d.innerHTML = `<span class="ta-name">${name}</span>
-    <span class="ta-text" title="${text}">${text}</span>
-    <div class="ta-btns">
-      <button class="ep-pass" onclick="toggleEssay('${name}','pass',this)">✅</button>
-      <button class="ep-fail" onclick="toggleEssay('${name}','fail',this)">❌</button>
-    </div>`;
-  return d;
-}
-
-function toggleEssay(name, action, btn) {
-  btn.closest('.ta-item').querySelectorAll('.ep-pass,.ep-fail').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-  if (action === 'pass') essayPassed.add(name);
-  else essayPassed.delete(name);
-}
-
-function commitEssay() {
-  if (!answersClosed) { toast('⚠️ 타이머가 끝난 후 채점하세요.'); return; }
-  const passed = [...essayPassed];
-  socket.emit('host_essay_reveal', { passedNames: passed });
-}
-
-socket.on('essay_need_manual', () => {
-  document.getElementById('essayPanel').style.display = 'block';
-  toast('📝 주관식 문제입니다. 통과자를 선택하고 [주관식 확정]을 누르세요.', 6000);
 });
 
 socket.on('reveal', ({ correctAnswer, correctAnswers, stats, eliminated:elims, survivorCount, type }) => {
@@ -579,7 +507,6 @@ socket.on('reveal', ({ correctAnswer, correctAnswers, stats, eliminated:elims, s
   document.getElementById('timerD').className   = 'timer-big';
   document.getElementById('lockedBanner').style.display = 'none';
 
-  // Short answer: mark correct/wrong
   if (type==='short' && correctAnswers) {
     document.getElementById('shortList').querySelectorAll('.sa-mark').forEach(m => {
       const text = m.previousElementSibling.textContent.toLowerCase().replace(/\s/g,'');
@@ -594,26 +521,16 @@ socket.on('reveal', ({ correctAnswer, correctAnswers, stats, eliminated:elims, s
   toast(`✅ 생존 ${survivorCount}명`, 4000);
 });
 
-socket.on('comeback_start', ({ count, cbPoolLeft }) => {
-  sfx('comeback'); isComeback=true;
-  toast(`🔄 패자부활전! 탈락자 ${count}명 도전 (남은 ${cbPoolLeft}개)`);
-  document.getElementById('cbLeft').textContent = cbPoolLeft;
-  updateButtons('QUESTION');
-});
-
-socket.on('comeback_result', ({ revived, survivorCount, stillElim }) => {
-  isComeback = false;
-  document.getElementById('cbBanner').style.display = 'none';
-  revived.forEach(name => { const p=players.get(name); if(p) p.eliminated=false; });
-  renderPlayers(); updateButtons('REVEAL');
-  sfx(revived.length>0?'correct':'wrong');
-  toast(`🔄 부활: ${revived.length}명 (${revived.join(', ')||'없음'})`, 5000);
-});
-
-socket.on('comeback_error', msg => toast(`⚠️ ${msg}`, 5000));
-
-socket.on('game_over', ({ winners }) => {
-  document.getElementById('wNames').textContent = winners.join(', ')||'생존자 없음';
+socket.on('game_over', ({ winners, allEliminated }) => {
+  if (allEliminated) {
+    document.getElementById('wTitle').textContent = '💀 전원 탈락!';
+    document.getElementById('wNames').textContent = '아쉽게 모두 탈락하셨습니다.';
+    document.getElementById('wNames').style.color = 'var(--red)';
+  } else {
+    document.getElementById('wTitle').textContent = '🔔 골든벨!';
+    document.getElementById('wNames').textContent = winners.join(', ') || '생존자 없음';
+    document.getElementById('wNames').style.color = 'var(--gold)';
+  }
   document.getElementById('wOverlay').style.display = 'flex';
   sfx('win'); updateButtons('GAMEOVER');
 });
@@ -633,18 +550,16 @@ socket.on('player_left', ({ name, total }) => {
 socket.on('game_log',         entry   => addElog(entry));
 socket.on('game_log_history', entries => { document.getElementById('elogBox').innerHTML=''; entries.forEach(addElog); });
 socket.on('reset', () => {
-  players.clear(); currentQ=null; isComeback=false; answersClosed=false;
-  essayPassed.clear();
+  players.clear(); currentQ=null; answersClosed=false;
   document.getElementById('timerD').textContent='--';
   document.getElementById('chartCard').style.display='none';
   document.getElementById('shortPanel').style.display='none';
-  document.getElementById('essayPanel').style.display='none';
-  document.getElementById('cbBanner').style.display='none';
   document.getElementById('lockedBanner').style.display='none';
+  document.getElementById('roundIndicator').textContent='📍 —';
   document.getElementById('questionArea').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px;font-size:11px;">게임을 시작하세요</div>';
-  renderPlayers(); updateButtons('LOBBY'); toast('🔁 초기화 완료');
+  renderPlayers(); updateButtons('LOBBY'); toast('🔄 초기화 완료');
 });
-socket.on('questions_reloaded', ({ main, comeback }) => toast(`📂 일반 ${main}개, 패자부활전 ${comeback}개 로드 완료`));
+socket.on('questions_reloaded', ({ main }) => toast(`📂 ${main}개 문제 로드 완료`));
 
 // ══ 렌더링 ════════════════════════════════════════════════════
 function updateStats(data) {
@@ -655,9 +570,13 @@ function updateStats(data) {
     document.getElementById('sQ').textContent  = data.questionIndex>=0 ? `${data.questionIndex+1}/${data.totalQuestions}` : '-';
     document.getElementById('progTxt').textContent = `${Math.max(0,data.questionIndex+1)} / ${data.totalQuestions}`;
     document.getElementById('progF').style.width = data.totalQuestions>0 ? ((data.questionIndex+1)/data.totalQuestions*100)+'%':'0%';
+    if (data.questionIndex >= 0) {
+      const round    = Math.floor(data.questionIndex / 15) + 1;
+      const qInRound = (data.questionIndex % 15) + 1;
+      document.getElementById('roundIndicator').textContent = `📍 ${round}회차 — ${qInRound}번째 문제`;
+    }
   }
-  if (data.comebackPoolLeft !== undefined) document.getElementById('cbLeft').textContent = data.comebackPoolLeft;
-  const phMap = { LOBBY:'대기중', QUESTION: isComeback?'패자부활전':'문제 진행중', REVEAL:'정답 공개', GAMEOVER:'게임 종료' };
+  const phMap = { LOBBY:'대기중', QUESTION:'문제 진행중', REVEAL:'정답 공개', GAMEOVER:'게임 종료' };
   const badge = document.getElementById('phaseBadge');
   const ph = data.phase || currentPhase;
   badge.textContent = phMap[ph]||ph; badge.className = `phase-badge ph-${ph}`;
@@ -668,29 +587,22 @@ function updateButtons(ph) {
   const B = id => document.getElementById(id);
   B('btnS').disabled  = ph!=='LOBBY';
   B('btnN').disabled  = ph!=='LOBBY' && ph!=='REVEAL';
-  B('btnRv').disabled = ph!=='QUESTION' || (currentQ&&currentQ.type==='essay');
   B('btnE').disabled  = ph==='LOBBY' || ph==='GAMEOVER';
-  B('btnCB').disabled = ph!=='REVEAL';
-  // Pause button: only active when question is running and not closed
   B('btnPause').disabled = ph !== 'QUESTION' || answersClosed;
-  // Essay commit: only if locked
-  const essayActive = ph==='QUESTION' && currentQ?.type==='essay' && answersClosed;
-  B('btnEssay').disabled = !essayActive;
 }
 
 function renderQuestion(q, correctAns, correctAnswers) {
   if (!q) return; currentQ = q;
-  const typeLabel = { choice:'객관식', ox:'O/X', short:'단답형', essay:'주관식' };
+  const typeLabel = { choice:'객관식', ox:'O/X', short:'단답형' };
   const choices = (q.choices||[]).map((c,i) => {
     const isC = correctAns!==undefined && i===correctAns;
     return `<div class="ch-item ${isC?'correct':''}"><div class="chbg">${LABELS[i]||i+1}</div><span style="font-size:10px">${c}</span></div>`;
   }).join('');
   let extra = '';
   if (q.type==='short' && correctAnswers) extra = `<div style="margin-top:5px;font-size:9px;color:var(--green)">정답: ${correctAnswers.join(' / ')}</div>`;
-  if (q.type==='essay') extra = `<div style="margin-top:5px;font-size:9px;color:var(--blue)">주관식 — 수동 채점 필요</div>`;
   document.getElementById('questionArea').innerHTML = `
     <div class="q-prev">
-      <span class="q-tag">${typeLabel[q.type]||q.type} · ${q.timeLimit}초${q.isComeback?' · 패자부활전':''}</span>
+      <span class="q-tag">${typeLabel[q.type]||q.type} · ${q.timeLimit}초</span>
       <div class="q-text-p">${q.question}</div>${extra}
     </div>
     <div class="choices-g">${choices}</div>`;
@@ -729,7 +641,7 @@ function addElog(entry) {
 function exportLog() {
   const lines = [...document.getElementById('elogBox').querySelectorAll('.el-entry')].map(e=>e.textContent).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines],{type:'text/plain;charset=utf-8'}));
-  a.download = `golden-bell-log-${new Date().toISOString().slice(0,10)}.txt`; a.click();
+  a.download = `speed-goldenbell-log-${new Date().toISOString().slice(0,10)}.txt`; a.click();
 }
 
 // ══ 버튼 핸들러 ═══════════════════════════════════════════════
@@ -748,12 +660,6 @@ function hostNext()     {
   socket.emit('host_next');
 }
 
-function hostReveal()   {
-  if (!btnCooltime('btnRv')) return;
-  socket.emit('host_reveal');
-}
-
-function hostComeback() { socket.emit('host_comeback'); }
 function reloadQ()      { socket.emit('host_reload_questions'); }
 function confirmEnd()   { if (confirm('게임을 종료하고 우승자를 발표하시겠습니까?')) socket.emit('host_end'); }
 function confirmReset() { if (confirm('초기화하시겠습니까? 모든 데이터가 삭제됩니다.')) socket.emit('host_reset'); }
@@ -779,13 +685,13 @@ function togglePause() {
 socket.on('timer_paused', ({ timeLeft }) => {
   timerPausedLocal = true;
   const btn = document.getElementById('btnPause');
-  if (btn) { btn.textContent = '▶ 타이머 재개'; btn.style.background = '#16a34a'; }
+  if (btn) { btn.textContent = '▶ 재개'; btn.style.background = '#16a34a'; }
   toast('⏸ 타이머 일시정지');
 });
 socket.on('timer_resumed', ({ timeLeft }) => {
   timerPausedLocal = false;
   const btn = document.getElementById('btnPause');
-  if (btn) { btn.textContent = '⏸ 타이머 일시정지'; btn.style.background = '#0369a1'; }
+  if (btn) { btn.textContent = '⏸ 일시정지'; btn.style.background = '#0369a1'; }
   toast('▶ 타이머 재개');
 });
 
