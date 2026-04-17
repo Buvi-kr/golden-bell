@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>⚡ 스피드 골든벨 v5 — 현황판</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -14,7 +16,7 @@
   --t1:#f1f5f9;--t2:#94a3b8;--t3:#475569;
 }
 html,body{width:100vw;height:100vh;overflow:hidden;background:var(--bg0);color:var(--t1);
-  font-family:'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Arial,sans-serif;}
+  font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgun Gothic','Segoe UI',Arial,sans-serif;}
 body{display:flex;flex-direction:column;}
 
 header{
@@ -171,6 +173,34 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 
 /* 카운트다운 오버레이 */
 @keyframes cdpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
+/* 정답 칩 글로우 */
+@keyframes chipGlow{
+  0%{transform:scale(1);box-shadow:none;}
+  45%{transform:scale(1.22);box-shadow:0 0 26px rgba(74,222,128,.75),0 0 6px rgba(74,222,128,.5);}
+  100%{transform:scale(1.1);box-shadow:0 0 14px rgba(74,222,128,.45);}
+}
+.short-chip.correct{background:#16a34a;color:#fff;animation:chipGlow .55s ease-out forwards;}
+
+/* 정답 공개 플로팅 박스 */
+#ansRevealBox{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  opacity:0;
+  background:linear-gradient(145deg,#021a0d,#05270f);
+  border:3px solid var(--green);border-radius:22px;
+  padding:clamp(16px,2.5vw,36px) clamp(32px,5.5vw,88px);
+  text-align:center;z-index:50;pointer-events:none;
+  box-shadow:0 0 80px rgba(74,222,128,.2),inset 0 1px 0 rgba(74,222,128,.12);
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s;
+  max-width:80vw;
+}
+#ansRevealBox.show{transform:translate(-50%,-50%) scale(1);opacity:1;}
+#ansRevealBox.hide{transform:translate(-50%,-50%) scale(0);opacity:0;transition:transform .3s ease-in,opacity .25s;}
+.arb-label{font-size:clamp(11px,1.1vw,16px);color:var(--t3);letter-spacing:3px;text-transform:uppercase;
+  margin-bottom:clamp(6px,.9vw,12px);font-weight:700;}
+.arb-answer{font-size:clamp(28px,4.8vw,68px);font-weight:900;color:var(--green);
+  text-shadow:0 0 30px rgba(74,222,128,.5);line-height:1.25;word-break:keep-all;}
 </style>
 </head>
 <body>
@@ -183,6 +213,12 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   </div>
 </header>
 <main>
+  <!-- 정답 공개 플로팅 박스 -->
+  <div id="ansRevealBox">
+    <div class="arb-label">정 답</div>
+    <div class="arb-answer" id="ansRevealText"></div>
+  </div>
+
   <!-- 카운트다운 오버레이 -->
   <div id="countdownOverlay" style="position:absolute;inset:0;background:rgba(4,9,15,.93);z-index:300;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
     <div id="cdNum" style="font-size:clamp(130px,22vw,240px);font-weight:900;color:var(--gold);line-height:1;text-shadow:0 0 60px rgba(245,158,11,.5);animation:cdpulse .9s ease-in-out infinite;"></div>
@@ -339,6 +375,9 @@ socket.on('question',({index,total,question,choices,type,timeLimit:tl,round,qInR
   document.getElementById('trFg').className='tr-fg';
   document.getElementById('trFg').style.strokeDashoffset='0';
   document.getElementById('lockBanner').style.display='none';
+  // 이전 정답 박스 즉시 닫기
+  const arb=document.getElementById('ansRevealBox');
+  if(arb){clearTimeout(arb._hideTimer);arb.classList.remove('show','hide');}
   renderChoices(choices,type);show('question');
 });
 
@@ -411,10 +450,34 @@ socket.on('reveal',({correctAnswer,correctAnswers,stats,eliminated:elims,survivo
       chip.classList.toggle('correct',ok);chip.classList.toggle('wrong',!ok);
     });
   }
+  showAnswerReveal(type,correctAnswer,correctAnswers,currentChoices);
   renderChartDebounced(stats||[],currentChoices,correctAnswer,type);
   sfx((elims||[]).length>0?'wrong':'correct');
   if((elims||[]).length>0){document.getElementById('elimNames').textContent=(elims||[]).length<=5?elims.join(', '):`${elims.length}명`;showPop('elimPop');}
 });
+
+function showAnswerReveal(type,correctAnswer,correctAnswers,choices){
+  const box=document.getElementById('ansRevealBox');
+  const txt=document.getElementById('ansRevealText');
+  if(!box||!txt)return;
+  let ans='';
+  if(type==='short'&&correctAnswers?.length){
+    ans=correctAnswers.join(' / ');
+  }else if((type==='choice'||type==='ox')&&correctAnswer!=null){
+    if(choices&&choices[correctAnswer]!=null){
+      ans=`${LABELS[correctAnswer]||''} ${choices[correctAnswer]}`;
+    }
+  }
+  if(!ans)return;
+  txt.textContent=ans;
+  box.classList.remove('hide');
+  box.classList.add('show');
+  clearTimeout(box._hideTimer);
+  box._hideTimer=setTimeout(()=>{
+    box.classList.add('hide');
+    setTimeout(()=>box.classList.remove('show','hide'),320);
+  },2800);
+}
 
 socket.on('game_over',({winners,allEliminated})=>{
   if(allEliminated){

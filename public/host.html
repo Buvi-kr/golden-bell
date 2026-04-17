@@ -67,8 +67,15 @@ header h1{font-size:16px;color:var(--orange);}
 .timer-big.urgent{color:var(--red);animation:tp .4s ease-in-out infinite;}
 @keyframes tp{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
-/* 카운트다운 오버레이 */
+/* 로컬 카운트다운 (questionCard 내부) */
 @keyframes cdpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+@keyframes cdFadeIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.cd-local{position:absolute;inset:0;background:rgba(6,13,26,.88);border-radius:9px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  z-index:10;animation:cdFadeIn .22s ease;}
+.cd-local-num{font-size:76px;font-weight:900;color:var(--gold);line-height:1;
+  animation:cdpulse .9s ease-in-out infinite;text-shadow:0 0 30px rgba(245,158,11,.45);}
+.cd-local-lbl{font-size:13px;color:var(--t2);font-weight:700;letter-spacing:.5px;}
 
 /* 답변 바 */
 .ans-bar{background:var(--bg0);border-radius:4px;height:7px;overflow:hidden;margin:4px 0;}
@@ -152,12 +159,6 @@ header h1{font-size:16px;color:var(--orange);}
     <span id="phaseBadge" class="phase-badge ph-LOBBY">대기중</span>
   </div>
 </header>
-
-<!-- 카운트다운 오버레이 -->
-<div id="countdownOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,13,26,.92);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-  <div id="cdNum" style="font-size:120px;font-weight:900;color:var(--gold);line-height:1;animation:cdpulse .9s ease-in-out infinite;"></div>
-  <div id="cdLabel" style="font-size:18px;color:var(--t2);"></div>
-</div>
 
 <div class="layout">
 <!-- ══ 왼쪽 ══════════════════════════════════════════════════ -->
@@ -250,7 +251,7 @@ header h1{font-size:16px;color:var(--orange);}
   </div>
 
   <!-- 현재 문제 -->
-  <div class="card">
+  <div class="card" id="questionCard" style="position:relative;overflow:hidden;">
     <div class="ct">❓ 현재 문제</div>
     <div id="questionArea"><div style="color:var(--t3);text-align:center;padding:20px;font-size:11px;">게임을 시작하세요</div></div>
   </div>
@@ -461,18 +462,28 @@ socket.on('answers_locked', ({ type, answers }) => {
 });
 
 socket.on('countdown', ({ from, type }) => {
-  const overlay = document.getElementById('countdownOverlay');
-  const numEl   = document.getElementById('cdNum');
-  const lblEl   = document.getElementById('cdLabel');
-  lblEl.textContent = type === 'game_start' ? '⚡ 게임 시작!' : '✅ 정답 공개!';
-  overlay.style.display = 'flex';
+  // 기존 로컬 카운트다운 제거
+  document.getElementById('cdLocal')?.remove();
+
+  const card = document.getElementById('questionCard');
+  const el   = document.createElement('div');
+  el.id        = 'cdLocal';
+  el.className = 'cd-local';
+  el.innerHTML = `<div class="cd-local-num" id="cdLocalNum">${from}</div>
+    <div class="cd-local-lbl">${type === 'game_start' ? '⚡ 게임 시작!' : '✅ 정답 공개!'}</div>`;
+  card.appendChild(el);
+
   let n = from;
-  numEl.textContent = n;
   sfx('tick');
   const iv = setInterval(() => {
     n--;
-    if (n <= 0) { clearInterval(iv); overlay.style.display = 'none'; return; }
-    numEl.textContent = n;
+    if (n <= 0) {
+      clearInterval(iv);
+      document.getElementById('cdLocal')?.remove();
+      return;
+    }
+    const numEl = document.getElementById('cdLocalNum');
+    if (numEl) numEl.textContent = n;
     sfx('tick');
   }, 1000);
 });
