@@ -62,14 +62,14 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 .qr-card-ph{width:clamp(165px,21vw,316px);height:clamp(165px,21vw,316px);background:var(--bg2);
   border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:10px;color:var(--t3);font-size:14px;text-align:center;padding:20px;}
-/* QR 카드 주황 코너 브라켓 — 완벽 대칭 (box-sizing으로 고정 크기, top/left + calc 통일) */
+/* QR 카드 주황 코너 브라켓 — right/bottom 으로 단순 대칭 */
 .qc{position:absolute;width:28px;height:28px;box-sizing:border-box;
   border-color:var(--orange);border-style:solid;z-index:2;pointer-events:none;
   animation:qcPulse 2.4s ease-in-out infinite;}
-.qc.tl{top:-4px; left:-4px;                            border-width:4px 0 0 4px;border-radius:14px 0 0 0;animation-delay:0s;}
-.qc.tr{top:-4px; left:calc(100% - 24px);               border-width:4px 4px 0 0;border-radius:0 14px 0 0;animation-delay:.6s;}
-.qc.bl{top:calc(100% - 24px); left:-4px;               border-width:0 0 4px 4px;border-radius:0 0 0 14px;animation-delay:1.8s;}
-.qc.br{top:calc(100% - 24px); left:calc(100% - 24px);  border-width:0 4px 4px 0;border-radius:0 0 14px 0;animation-delay:1.2s;}
+.qc.tl{top:-4px;    left:-4px;  border-width:4px 0 0 4px;border-radius:14px 0 0 0;animation-delay:0s;}
+.qc.tr{top:-4px;    right:-4px; border-width:4px 4px 0 0;border-radius:0 14px 0 0;animation-delay:.6s;}
+.qc.br{bottom:-4px; right:-4px; border-width:0 4px 4px 0;border-radius:0 0 14px 0;animation-delay:1.2s;}
+.qc.bl{bottom:-4px; left:-4px;  border-width:0 0 4px 4px;border-radius:0 0 0 14px;animation-delay:1.8s;}
 @keyframes qcPulse{0%,100%{opacity:.85;filter:drop-shadow(0 0 0 rgba(249,115,22,0))}50%{opacity:1;filter:drop-shadow(0 0 8px rgba(249,115,22,.55))}}
 .qr-label{font-size:clamp(14px,1.5vw,21px);font-weight:700;color:var(--t1);text-align:center;}
 .qr-url{font-size:clamp(9px,.85vw,12px);color:var(--blue);text-align:center;max-width:clamp(165px,21vw,316px);word-break:break-all;opacity:.8;}
