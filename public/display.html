@@ -56,17 +56,17 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   background:linear-gradient(to bottom,transparent,rgba(249,115,22,.35) 20%,rgba(249,115,22,.35) 80%,transparent);}
 .lobby-right{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:clamp(10px,1.8vh,20px);padding:40px 60px 40px 20px;position:relative;z-index:1;}
-.qr-card{background:#fff;border-radius:16px;padding:clamp(7px,1.1vw,14px);position:relative;
+.qr-card{background:#fff;border-radius:16px;padding:clamp(7px,1.1vw,14px);position:relative;overflow:visible;
   box-shadow:0 0 0 6px rgba(249,115,22,.12),0 0 60px rgba(249,115,22,.17);}
 .qr-card img{display:block;width:clamp(165px,21vw,316px);height:clamp(165px,21vw,316px);border-radius:7px;}
 .qr-card-ph{width:clamp(165px,21vw,316px);height:clamp(165px,21vw,316px);background:var(--bg2);
   border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:10px;color:var(--t3);font-size:14px;text-align:center;padding:20px;}
-.qc{position:absolute;width:18px;height:18px;border-color:var(--orange);border-style:solid;border-radius:2px;}
-.qc.tl{top:-1px;left:-1px;border-width:3px 0 0 3px;}
-.qc.tr{top:-1px;right:-1px;border-width:3px 3px 0 0;}
-.qc.bl{bottom:-1px;left:-1px;border-width:0 0 3px 3px;}
-.qc.br{bottom:-1px;right:-1px;border-width:0 3px 3px 0;}
+.qc{position:absolute;width:22px;height:22px;border-color:var(--orange);border-style:solid;z-index:2;}
+.qc.tl{top:-5px;left:-5px;border-width:4px 0 0 4px;border-radius:4px 0 0 0;}
+.qc.tr{top:-5px;right:-5px;border-width:4px 4px 0 0;border-radius:0 4px 0 0;}
+.qc.bl{bottom:-5px;left:-5px;border-width:0 0 4px 4px;border-radius:0 0 0 4px;}
+.qc.br{bottom:-5px;right:-5px;border-width:0 4px 4px 0;border-radius:0 0 4px 0;}
 .qr-label{font-size:clamp(14px,1.5vw,21px);font-weight:700;color:var(--t1);text-align:center;}
 .qr-url{font-size:clamp(9px,.85vw,12px);color:var(--blue);text-align:center;max-width:clamp(165px,21vw,316px);word-break:break-all;opacity:.8;}
 

@@ -184,6 +184,7 @@ const state = {
   currentTimeLimit: 0,
   gameLog:       [],
   qrPopupVisible: false,
+  pendingStartIndex: 0,  // 0 = Q1부터, N = QN부터 시작
 };
 
 function cq() { return state.mainQuestions[state.questionIndex]; }
@@ -522,7 +523,11 @@ io.on('connection', socket => {
     if (!isAdmin(socket)) return;
     const mainQ = loadQuestions();
     state.mainQuestions = mainQ;
-    state.questionIndex = -1; state.phase = 'LOBBY';
+    // pendingStartIndex가 설정돼 있으면 그 문제부터 시작
+    const pending = state.pendingStartIndex;
+    state.questionIndex = pending > 1 ? pending - 2 : -1;
+    state.pendingStartIndex = 0;
+    state.phase = 'LOBBY';
     state.answersClosed = false; state.gameLog = [];
     state.ghostPlayers.clear();
     for (const p of state.players.values()) {
@@ -595,6 +600,27 @@ io.on('connection', socket => {
     const mainQ = loadQuestions();
     state.mainQuestions = mainQ;
     socket.emit('questions_reloaded', { main: mainQ.length });
+  });
+
+  // ── Host: 문제 지정 (로비: 시작 문제 예약 / 진행중: 다음 문제 점프) ──
+  socket.on('host_jump_question', ({ targetQ }) => {
+    if (!isAdmin(socket)) return;
+    const max = state.mainQuestions.length || 75;
+    const n   = Math.max(1, Math.min(Math.round(targetQ), max));
+
+    if (state.phase === 'LOBBY') {
+      state.pendingStartIndex = n;
+      socket.emit('question_jump_set', { targetQ: n, phase: 'LOBBY' });
+      log(`Pending start index set: Q${n}`);
+    } else if (state.phase === 'REVEAL') {
+      // _doNextQuestion()에서 ++ 하므로 n-2 세팅 (n=1이면 -1)
+      state.questionIndex = n - 2;
+      socket.emit('question_jump_set', { targetQ: n, phase: 'REVEAL' });
+      log(`Jump set: next question will be Q${n}`);
+      broadcastState();
+    } else {
+      socket.emit('question_jump_set', { targetQ: null, phase: state.phase, error: '이 상태에서는 지정 불가' });
+    }
   });
 
   socket.on('disconnect', () => {
