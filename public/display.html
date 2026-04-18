@@ -201,6 +201,114 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   margin-bottom:clamp(6px,.9vw,12px);font-weight:700;}
 .arb-answer{font-size:clamp(28px,4.8vw,68px);font-weight:900;color:var(--green);
   text-shadow:0 0 30px rgba(74,222,128,.5);line-height:1.25;word-break:keep-all;}
+
+/* ══════════════════════════════════════════════════════════
+   울트라와이드 / 서라운드 레이아웃  (가로:세로 ≥ 2:1)
+   3840×1080 듀얼 · 5760×1080 트리플 · 21:9 울트라와이드
+   ══════════════════════════════════════════════════════════ */
+@media (min-aspect-ratio: 2/1) {
+
+  /* ─── 헤더 ─────────────────────────────── */
+  header{height:80px;padding:0 72px;}
+  .logo{font-size:30px;letter-spacing:4px;}
+  .hstats{gap:88px;}
+  .hnum{font-size:48px;}
+  .hlbl{font-size:14px;letter-spacing:1px;}
+
+  /* ─── 문제 화면 3열 그리드 ─────────────── */
+  /* 열: [타이머 220px] [문제텍스트 1fr] [보기 45%] */
+  #sQuestion{
+    display:grid !important;
+    grid-template-columns:220px 1fr 45%;
+    grid-template-rows:auto 1fr;
+    grid-template-areas:
+      "timer  banner  banner"
+      "timer  qbox    choices";
+    padding:18px 64px;
+    gap:12px 40px;
+  }
+  .pt-row{
+    grid-area:timer;
+    flex-direction:column !important;
+    align-items:center;
+    justify-content:center;
+    gap:22px;
+  }
+  /* 진행 바는 헤더의 문제 번호로 대체 */
+  .prog-bar{display:none !important;}
+
+  /* 타이머 원 키우기 */
+  .tr{width:170px !important;height:170px !important;}
+  .tr svg{width:170px !important;height:170px !important;}
+  .tr-n{font-size:50px !important;}
+
+  /* 회차 텍스트 (타이머 아래) */
+  .pt-row .qnum-uw{display:block;}
+
+  #lockBanner{grid-area:banner;font-size:clamp(16px,1.6vw,26px);border-radius:11px;}
+  .qbox{grid-area:qbox;align-self:center;padding:clamp(18px,2vw,34px) clamp(22px,3vw,48px);}
+  #contentArea{grid-area:choices;}
+
+  /* ─── 문제 텍스트 ───────────────────────── */
+  .qnum{font-size:clamp(14px,1.3vw,21px);margin-bottom:8px;}
+  .type-badge{font-size:clamp(13px,1.2vw,18px);padding:4px 16px;}
+  .qtext{font-size:clamp(30px,3.4vw,64px);line-height:1.35;}
+
+  /* ─── 보기 카드 (객관식) ───────────────── */
+  .ccard{
+    padding:clamp(14px,1.8vw,28px) clamp(16px,2.2vw,36px);
+    border-radius:18px;
+    gap:clamp(12px,1.6vw,26px);
+  }
+  .ctext{font-size:clamp(20px,2.1vw,40px);}
+  .clabel{
+    width:clamp(52px,6vw,84px) !important;
+    height:clamp(52px,6vw,84px) !important;
+    font-size:clamp(18px,2vw,32px) !important;
+    border-radius:50% !important;
+  }
+
+  /* ─── OX 카드 ──────────────────────────── */
+  .ox-big{font-size:clamp(80px,13vw,180px);}
+
+  /* ─── 단답형 ───────────────────────────── */
+  .short-display{padding:clamp(18px,2vw,32px);}
+  .short-count-big{font-size:clamp(56px,9vw,130px);}
+  .short-lbl{font-size:clamp(16px,1.7vw,26px);}
+  .short-chip{
+    font-size:clamp(14px,1.3vw,22px);
+    padding:7px 20px;
+    border-radius:24px;
+  }
+  .short-grid{max-height:clamp(110px,18vh,200px);}
+
+  /* ─── 로비 ─────────────────────────────── */
+  .lobby-bell{font-size:clamp(90px,12vw,180px);}
+  .lobby-title{font-size:clamp(56px,8vw,130px);letter-spacing:5px;}
+  .lobby-count-num{font-size:clamp(80px,14vw,200px);}
+  .lobby-count-lbl{font-size:clamp(16px,2vw,32px);}
+  .lobby-hint{font-size:clamp(16px,1.8vw,28px);}
+  .qr-card img{
+    width:clamp(230px,27vw,440px) !important;
+    height:clamp(230px,27vw,440px) !important;
+  }
+  .qr-card-ph{
+    width:clamp(230px,27vw,440px) !important;
+    height:clamp(230px,27vw,440px) !important;
+  }
+  .qr-label{font-size:clamp(18px,2vw,34px);}
+  .qr-url{font-size:clamp(11px,1vw,16px);}
+
+  /* ─── 종료 화면 ─────────────────────────── */
+  .go-icon{font-size:clamp(110px,16vw,220px);}
+  .go-title{font-size:clamp(68px,11vw,160px);}
+  .go-winners{font-size:clamp(32px,5.5vw,90px);}
+
+  /* ─── 정답 플로팅 박스 ──────────────────── */
+  .arb-label{font-size:clamp(14px,1.3vw,22px);letter-spacing:4px;}
+  .arb-answer{font-size:clamp(44px,6.5vw,110px);}
+  #ansRevealBox{padding:clamp(22px,3vw,50px) clamp(48px,7vw,120px);border-width:4px;}
+}
 </style>
 </head>
 <body>
