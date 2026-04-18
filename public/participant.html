@@ -555,7 +555,20 @@
       applyFullState(fs);
     });
 
-    socket.on('session_not_found', () => { inGame = false; localStorage.removeItem('gb_inGame'); showJoin(true); });
+    socket.on('session_not_found', () => {
+      // 저장된 이름이 있으면 자동으로 닉네임 재입장 시도 (게임 중 재접속 복구)
+      const savedName = localStorage.getItem('gb_name');
+      if (savedName && myUid) {
+        document.getElementById('loadTxt').textContent = `${savedName}(으)로 재입장 시도 중...`;
+        socket.emit('join', { name: savedName, uid: myUid });
+        // 실패 시 3초 후 수동 입장 화면으로
+        setTimeout(() => {
+          if (!inGame) { localStorage.removeItem('gb_inGame'); showJoin(true); }
+        }, 3000);
+      } else {
+        inGame = false; localStorage.removeItem('gb_inGame'); showJoin(true);
+      }
+    });
     socket.on('session_expired', () => { inGame = false; myName = ''; localStorage.removeItem('gb_inGame'); localStorage.removeItem('gb_name'); showJoin(false); showToast('세션이 만료되었습니다.'); });
 
     // ══ 상태 적용 ═══════════════════════════════════════════════
@@ -959,8 +972,9 @@
         document.getElementById('elimInfoBox').style.display = 'flex';
         document.getElementById('elimServerStart').textContent =
           `서버 시작 시간: ${fmt(data.serverStartTime)}`;
+        const reasonTxt = data.reason === 'timeout' ? ' (⏰ 시간 초과)' : '';
         document.getElementById('elimQuestion').textContent =
-          `제 ${data.eliminatedAtQuestion}번 문제에서 탈락하셨습니다.`;
+          `제 ${data.eliminatedAtQuestion}번 문제에서 탈락하셨습니다.${reasonTxt}`;
       }
       showScreen('sEliminated');
     });

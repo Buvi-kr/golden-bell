@@ -67,8 +67,15 @@ header h1{font-size:16px;color:var(--orange);}
 .timer-big.urgent{color:var(--red);animation:tp .4s ease-in-out infinite;}
 @keyframes tp{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 
-/* 카운트다운 오버레이 */
+/* 로컬 카운트다운 (questionCard 내부) */
 @keyframes cdpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+@keyframes cdFadeIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.cd-local{position:absolute;inset:0;background:rgba(6,13,26,.88);border-radius:9px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  z-index:10;animation:cdFadeIn .22s ease;}
+.cd-local-num{font-size:76px;font-weight:900;color:var(--gold);line-height:1;
+  animation:cdpulse .9s ease-in-out infinite;text-shadow:0 0 30px rgba(245,158,11,.45);}
+.cd-local-lbl{font-size:13px;color:var(--t2);font-weight:700;letter-spacing:.5px;}
 
 /* 답변 바 */
 .ans-bar{background:var(--bg0);border-radius:4px;height:7px;overflow:hidden;margin:4px 0;}
@@ -153,11 +160,11 @@ header h1{font-size:16px;color:var(--orange);}
   </div>
 </header>
 
-<!-- 카운트다운 오버레이 -->
-<div id="countdownOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,13,26,.92);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-  <div id="cdNum" style="font-size:120px;font-weight:900;color:var(--gold);line-height:1;animation:cdpulse .9s ease-in-out infinite;"></div>
-  <div id="cdLabel" style="font-size:18px;color:var(--t2);"></div>
+<!-- 헬스 경고 배너 (서버/터널 이상 감지 시) -->
+<div id="healthBanner" style="display:none;background:#991b1b;color:#fff;padding:8px 16px;font-size:12px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid #dc2626;animation:hbPulse 1.2s ease-in-out infinite;">
+  ⚠️ <span id="healthMsg">연결 확인 중...</span>
 </div>
+<style>@keyframes hbPulse{0%,100%{background:#991b1b}50%{background:#dc2626}}</style>
 
 <div class="layout">
 <!-- ══ 왼쪽 ══════════════════════════════════════════════════ -->
@@ -219,13 +226,16 @@ header h1{font-size:16px;color:var(--orange);}
       <button class="btn btn-end" id="btnE"     onclick="confirmEnd()"   disabled>🏁 종료</button>
       <button class="btn btn-rst" id="btnReset" onclick="confirmReset()">🔄 초기화</button>
     </div>
-    <!-- 유틸리티 버튼 3열 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;">
+    <!-- 유틸리티 버튼 2×3 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
       <button class="btn" id="btnPause" onclick="togglePause()"
         style="background:#0369a1;color:#fff;font-size:10px;" disabled>⏸ 일시정지</button>
       <button class="btn" id="btnQrPopup" onclick="toggleQrPopup()"
         style="background:#4338ca;color:#fff;font-size:10px;">📱 QR 팝업</button>
       <button class="btn btn-rst" style="font-size:10px;" onclick="reloadQ()">📂 문제 로드</button>
+      <button class="btn btn-rst" style="font-size:10px;color:var(--gold);" onclick="openJumpModal()">🎯 문제 지정</button>
+      <button class="btn" id="btnOutdoor" onclick="toggleOutdoor()"
+        style="background:#b45309;color:#fff;font-size:10px;grid-column:span 2;">☀️ 야외모드 OFF</button>
     </div>
   </div>
 
@@ -250,7 +260,7 @@ header h1{font-size:16px;color:var(--orange);}
   </div>
 
   <!-- 현재 문제 -->
-  <div class="card">
+  <div class="card" id="questionCard" style="position:relative;overflow:hidden;">
     <div class="ct">❓ 현재 문제</div>
     <div id="questionArea"><div style="color:var(--t3);text-align:center;padding:20px;font-size:11px;">게임을 시작하세요</div></div>
   </div>
@@ -298,6 +308,23 @@ header h1{font-size:16px;color:var(--orange);}
     </div>
   </div>
 </div>
+</div>
+
+<!-- 문제 지정 모달 -->
+<div id="jumpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:400;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:2px solid var(--gold);border-radius:13px;padding:22px 30px;min-width:230px;text-align:center;">
+    <div style="font-size:15px;font-weight:800;color:var(--gold);margin-bottom:6px;">🎯 문제 지정</div>
+    <div style="font-size:10px;color:var(--t2);margin-bottom:12px;" id="jumpHint">로비: 시작 문제 예약 &nbsp;|&nbsp; 정답공개 후: 즉시 점프</div>
+    <input id="jumpInput" type="number" min="1" max="75" value="1"
+      style="width:90px;background:var(--bg0);border:1px solid var(--gold);border-radius:7px;
+        padding:8px 10px;font-size:20px;font-weight:900;color:var(--gold);text-align:center;
+        outline:none;margin-bottom:16px;"
+      onkeydown="if(event.key==='Enter')confirmJump()">
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn btn-n" style="padding:8px 20px;font-size:12px;" onclick="confirmJump()">확인</button>
+      <button class="btn btn-rst" style="padding:8px 16px;font-size:12px;" onclick="closeJumpModal()">취소</button>
+    </div>
+  </div>
 </div>
 
 <!-- 우승자 팝업 -->
@@ -461,18 +488,28 @@ socket.on('answers_locked', ({ type, answers }) => {
 });
 
 socket.on('countdown', ({ from, type }) => {
-  const overlay = document.getElementById('countdownOverlay');
-  const numEl   = document.getElementById('cdNum');
-  const lblEl   = document.getElementById('cdLabel');
-  lblEl.textContent = type === 'game_start' ? '⚡ 게임 시작!' : '✅ 정답 공개!';
-  overlay.style.display = 'flex';
+  // 기존 로컬 카운트다운 제거
+  document.getElementById('cdLocal')?.remove();
+
+  const card = document.getElementById('questionCard');
+  const el   = document.createElement('div');
+  el.id        = 'cdLocal';
+  el.className = 'cd-local';
+  el.innerHTML = `<div class="cd-local-num" id="cdLocalNum">${from}</div>
+    <div class="cd-local-lbl">${type === 'game_start' ? '⚡ 게임 시작!' : '✅ 정답 공개!'}</div>`;
+  card.appendChild(el);
+
   let n = from;
-  numEl.textContent = n;
   sfx('tick');
   const iv = setInterval(() => {
     n--;
-    if (n <= 0) { clearInterval(iv); overlay.style.display = 'none'; return; }
-    numEl.textContent = n;
+    if (n <= 0) {
+      clearInterval(iv);
+      document.getElementById('cdLocal')?.remove();
+      return;
+    }
+    const numEl = document.getElementById('cdLocalNum');
+    if (numEl) numEl.textContent = n;
     sfx('tick');
   }, 1000);
 });
@@ -664,6 +701,49 @@ function reloadQ()      { socket.emit('host_reload_questions'); }
 function confirmEnd()   { if (confirm('게임을 종료하고 우승자를 발표하시겠습니까?')) socket.emit('host_end'); }
 function confirmReset() { if (confirm('초기화하시겠습니까? 모든 데이터가 삭제됩니다.')) socket.emit('host_reset'); }
 
+// ── 야외모드 토글 (display 에 브로드캐스트) ──
+let outdoorMode = localStorage.getItem('gb_outdoor') === '1';
+function applyOutdoorBtn() {
+  const b = document.getElementById('btnOutdoor');
+  if (!b) return;
+  b.textContent = outdoorMode ? '☀️ 야외모드 ON' : '☀️ 야외모드 OFF';
+  b.style.background = outdoorMode ? '#ea580c' : '#b45309';
+}
+function toggleOutdoor() {
+  outdoorMode = !outdoorMode;
+  localStorage.setItem('gb_outdoor', outdoorMode ? '1' : '0');
+  applyOutdoorBtn();
+  socket.emit('host_outdoor', { on: outdoorMode });
+}
+applyOutdoorBtn();
+// 페이지 로드 직후 현재 모드 동기화
+setTimeout(() => { if (outdoorMode) socket.emit('host_outdoor', { on: true }); }, 500);
+
+// ── 헬스체크 polling (10초) ──
+let healthFailCount = 0;
+async function pollHealth() {
+  const banner = document.getElementById('healthBanner');
+  const msg    = document.getElementById('healthMsg');
+  try {
+    const r = await fetch('/api/health', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    healthFailCount = 0;
+    if (d.cfUrl && d.cfAlive === false) {
+      banner.style.display = 'block';
+      msg.textContent = `⚠️ Cloudflare 터널 응답 없음 — QR 외부 접속 불가 가능성 (마지막 정상: ${new Date(d.ts - 120000).toLocaleTimeString('ko-KR')})`;
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch (e) {
+    healthFailCount++;
+    banner.style.display = 'block';
+    msg.textContent = `⚠️ 서버 응답 없음 (${healthFailCount}회 연속) — 네트워크/서버 확인 필요`;
+  }
+}
+setInterval(pollHealth, 10000);
+setTimeout(pollHealth, 2000);
+
 function openDisplay()     {
   const base = (document.getElementById('tunnelUrl').value.trim() || location.origin).replace(/\/$/, '');
   window.open(base + '/display.html', '_blank');
@@ -714,6 +794,38 @@ socket.on('hide_qr_popup', () => {
   qrPopupOn = false;
   const btn = document.getElementById('btnQrPopup');
   if (btn) { btn.textContent = '📱 QR 팝업'; btn.style.background = '#4338ca'; }
+});
+
+// ── 문제 지정 모달 ────────────────────────────────────────
+function openJumpModal() {
+  const modal = document.getElementById('jumpModal');
+  const hint  = document.getElementById('jumpHint');
+  hint.textContent = currentPhase === 'LOBBY'
+    ? '🚀 시작 버튼 누를 때 이 문제부터 시작합니다'
+    : currentPhase === 'REVEAL'
+    ? '▶ 다음 문제 클릭 시 이 번호로 점프합니다'
+    : '⚠️ 로비 또는 정답 공개 상태에서만 지정 가능합니다';
+  modal.style.display = 'flex';
+  const inp = document.getElementById('jumpInput');
+  inp.focus(); inp.select();
+}
+function closeJumpModal() {
+  document.getElementById('jumpModal').style.display = 'none';
+}
+function confirmJump() {
+  const n = parseInt(document.getElementById('jumpInput').value);
+  if (!n || n < 1) { toast('❌ 1 이상 숫자를 입력하세요'); return; }
+  socket.emit('host_jump_question', { targetQ: n });
+  closeJumpModal();
+}
+socket.on('question_jump_set', ({ targetQ, phase, error }) => {
+  if (error) { toast('⚠️ ' + error, 3000); return; }
+  const msg = phase === 'LOBBY'
+    ? `🎯 Q${targetQ}번부터 시작 예약됨`
+    : `🎯 Q${targetQ}번으로 바로 이동!`;
+  toast(msg, 3000);
+  if (phase === 'LOBBY')
+    document.getElementById('roundIndicator').textContent = `📍 시작: Q${targetQ}번 예약됨`;
 });
 
 function toast(msg, ms=2500) {
