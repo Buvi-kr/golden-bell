@@ -76,6 +76,9 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 
 /* ══ 문제 ══ */
 #sQuestion{flex:1;display:none;flex-direction:column;gap:10px;padding:13px 38px;}
+/* 통계 패널은 기본(일반 해상도)에서 숨김 — UW 미디어쿼리에서만 표시 */
+#statsPanel{display:none;}
+@media (min-aspect-ratio: 2/1){#statsPanel{display:flex !important;}}
 .pt-row{display:flex;align-items:center;gap:13px;}
 .prog-bar{flex:1;background:var(--bg2);border-radius:4px;height:7px;overflow:hidden;}
 .prog-fill{height:100%;background:var(--orange);border-radius:4px;transition:width .4s;}
@@ -209,49 +212,128 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 /* ══════════════════════════════════════════════════════════
    울트라와이드 / 서라운드 레이아웃  (가로:세로 ≥ 2:1)
    3840×1080 듀얼 · 5760×1080 트리플 · 21:9 울트라와이드
+   레이아웃: [상단 10% 여백] [20% 대형 카운터] [좌 문제 | 중 보기 | 우 통계]
    ══════════════════════════════════════════════════════════ */
 @media (min-aspect-ratio: 2/1) {
 
-  /* ─── 헤더 ─────────────────────────────── */
-  header{height:80px;padding:0 72px;}
-  .logo{font-size:30px;letter-spacing:4px;}
-  .hstats{gap:88px;}
-  .hnum{font-size:48px;}
-  .hlbl{font-size:14px;letter-spacing:1px;}
+  /* ─── 헤더 = 대형 카운터 바 (상단 20vh, top 10vh 여백 확보) ── */
+  header{
+    height:20vh;min-height:180px;
+    padding:0 80px;margin-top:6vh;
+    background:linear-gradient(180deg,rgba(10,22,40,.0) 0%,rgba(10,22,40,.55) 100%);
+    border-bottom:3px solid rgba(249,115,22,.65);
+    box-shadow:0 8px 40px rgba(249,115,22,.12);
+    gap:clamp(40px,5vw,120px);
+  }
+  .logo{
+    font-size:clamp(22px,1.9vw,36px);letter-spacing:3px;
+    order:3;opacity:.75;white-space:nowrap;
+  }
+  .hstats{
+    flex:1;display:flex;justify-content:space-evenly;gap:0;order:2;
+  }
+  .hstat{
+    background:rgba(30,41,59,.55);backdrop-filter:blur(6px);
+    border:2px solid rgba(148,163,184,.15);border-radius:22px;
+    padding:clamp(12px,1.5vh,22px) clamp(24px,2.5vw,48px);
+    min-width:clamp(200px,18vw,340px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    animation:counterSpread .7s cubic-bezier(.25,.9,.35,1.05) both;
+  }
+  .hstat:nth-child(1){animation-delay:.0s;border-color:rgba(74,222,128,.35);}
+  .hstat:nth-child(2){animation-delay:.1s;border-color:rgba(248,113,113,.35);}
+  .hstat:nth-child(3){animation-delay:.2s;border-color:rgba(96,165,250,.35);}
+  @keyframes counterSpread{
+    0%{transform:scale(.6);opacity:0;}
+    65%{transform:scale(1.06);opacity:1;}
+    100%{transform:scale(1);}
+  }
+  .hnum{
+    font-size:clamp(72px,9vw,168px) !important;
+    font-weight:900;line-height:1;
+    text-shadow:0 4px 24px currentColor,0 0 8px rgba(0,0,0,.5);
+    filter:brightness(1.15);
+  }
+  .hlbl{
+    font-size:clamp(16px,1.5vw,26px) !important;
+    margin-top:10px;letter-spacing:3px;font-weight:700;
+    color:var(--t2);
+  }
 
   /* ─── 문제 화면 3열 그리드 ─────────────── */
-  /* 열: [타이머 220px] [문제텍스트 1fr] [보기 45%] */
+  /* 열: [좌 문제 28%] [중 보기 40%] [우 통계 패널 1fr] */
   #sQuestion{
     display:grid;
-    grid-template-columns:220px 1fr 45%;
-    grid-template-rows:auto 1fr;
+    grid-template-columns:28% 40% 1fr;
+    grid-template-rows:auto auto 1fr;
     grid-template-areas:
-      "timer  banner  banner"
-      "timer  qbox    choices";
-    padding:18px 64px;
-    gap:12px 40px;
+      "timer  banner   banner"
+      "qbox   choices  stats"
+      "qbox   choices  stats";
+    padding:clamp(24px,3vh,48px) clamp(40px,4vw,96px);
+    gap:clamp(16px,1.8vh,28px) clamp(24px,2.5vw,52px);
+    align-items:stretch;
   }
+  /* 타이머: 상단 가로 전체 배경에 크게 중앙 */
   .pt-row{
     grid-area:timer;
-    flex-direction:column !important;
-    align-items:center;
-    justify-content:center;
-    gap:22px;
+    flex-direction:row !important;
+    align-items:center;justify-content:center;gap:32px;
+    padding:0 0 8px;
   }
-  /* 진행 바는 헤더의 문제 번호로 대체 */
   .prog-bar{display:none !important;}
 
-  /* 타이머 원 키우기 */
-  .tr{width:170px !important;height:170px !important;}
-  .tr svg{width:170px !important;height:170px !important;}
-  .tr-n{font-size:50px !important;}
+  /* 타이머 원 대형화 — 3840×1080 에서 "중앙 대형 타이머" 느낌 */
+  .tr{width:clamp(140px,12vh,200px) !important;height:clamp(140px,12vh,200px) !important;}
+  .tr svg{width:100% !important;height:100% !important;viewBox:0 0 76 76;}
+  .tr-n{font-size:clamp(44px,5.5vh,76px) !important;}
 
-  /* 회차 텍스트 (타이머 아래) */
-  .pt-row .qnum-uw{display:block;}
+  #lockBanner{
+    grid-area:banner;font-size:clamp(16px,1.6vw,26px);border-radius:14px;
+    animation:spreadIn .5s cubic-bezier(.25,.9,.35,1.05) both;
+  }
+  .qbox{
+    grid-area:qbox;align-self:stretch;display:flex;flex-direction:column;justify-content:center;
+    padding:clamp(22px,3vw,48px) clamp(24px,3.2vw,52px);
+    border-radius:22px;
+    background:linear-gradient(145deg,#0f1e36,#0a1628);
+    border:2px solid rgba(249,115,22,.28);
+    box-shadow:0 8px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(249,115,22,.08);
+    animation:spreadIn .6s cubic-bezier(.25,.9,.35,1.05) both;
+    animation-delay:.05s;
+  }
+  #contentArea{
+    grid-area:choices;
+    animation:spreadIn .6s cubic-bezier(.25,.9,.35,1.05) both;
+    animation-delay:.15s;
+  }
+  #statsPanel{
+    grid-area:stats;
+    display:flex;flex-direction:column;gap:16px;min-height:0;
+    animation:spreadIn .6s cubic-bezier(.25,.9,.35,1.05) both;
+    animation-delay:.25s;
+  }
 
-  #lockBanner{grid-area:banner;font-size:clamp(16px,1.6vw,26px);border-radius:11px;}
-  .qbox{grid-area:qbox;align-self:center;padding:clamp(18px,2vw,34px) clamp(22px,3vw,48px);}
-  #contentArea{grid-area:choices;}
+  /* ─── 스프레드 애니메이션 (중앙에서 박스 형태로 밀려나오는 연출) ─── */
+  @keyframes spreadIn{
+    0%{transform:scale(.75) translateY(10px);opacity:0;}
+    65%{transform:scale(1.03) translateY(0);opacity:1;}
+    100%{transform:scale(1);}
+  }
+  .ccard,.oxcard{
+    animation:cardSpread .55s cubic-bezier(.25,.9,.35,1.05) both;
+  }
+  .cgrid .ccard:nth-child(1){animation-delay:.18s;}
+  .cgrid .ccard:nth-child(2){animation-delay:.26s;}
+  .cgrid .ccard:nth-child(3){animation-delay:.34s;}
+  .cgrid .ccard:nth-child(4){animation-delay:.42s;}
+  .cgrid .oxcard:nth-child(1){animation-delay:.2s;}
+  .cgrid .oxcard:nth-child(2){animation-delay:.32s;}
+  @keyframes cardSpread{
+    0%{transform:scale(.6);opacity:0;}
+    70%{transform:scale(1.05);opacity:1;}
+    100%{transform:scale(1);}
+  }
 
   /* ─── 문제 텍스트 ───────────────────────── */
   .qnum{font-size:clamp(14px,1.3vw,21px);margin-bottom:8px;}
@@ -312,7 +394,77 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   .arb-label{font-size:clamp(14px,1.3vw,22px);letter-spacing:4px;}
   .arb-answer{font-size:clamp(44px,6.5vw,110px);}
   #ansRevealBox{padding:clamp(22px,3vw,50px) clamp(48px,7vw,120px);border-width:4px;}
+
+  /* ─── 우측 통계/보상 패널 ──────────────── */
+  #statsPanel .sp-card{
+    background:linear-gradient(145deg,#0f1e36,#0a1628);
+    border:2px solid rgba(148,163,184,.18);border-radius:20px;
+    padding:clamp(14px,1.8vh,24px) clamp(18px,2vw,32px);
+    box-shadow:0 6px 24px rgba(0,0,0,.28);
+  }
+  #statsPanel .sp-title{
+    font-size:clamp(16px,1.5vw,24px);font-weight:800;color:var(--t1);
+    margin-bottom:clamp(10px,1.4vh,18px);letter-spacing:1.5px;
+    display:flex;align-items:center;gap:10px;
+  }
+  #statsPanel .sp-empty{
+    font-size:clamp(13px,1.1vw,18px);color:var(--t3);text-align:center;padding:20px 0;
+  }
+  .sp-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:clamp(8px,1vh,14px);}
+  .sp-bar-lbl{
+    width:clamp(36px,3.2vw,52px);height:clamp(36px,3.2vw,52px);
+    border-radius:50%;background:var(--bg3);
+    display:flex;align-items:center;justify-content:center;
+    font-size:clamp(16px,1.5vw,24px);font-weight:900;color:var(--t2);
+    flex-shrink:0;
+  }
+  .sp-bar-lbl.ox-o{background:#1e3a5f;color:var(--blue);}
+  .sp-bar-lbl.ox-x{background:#2d0f0f;color:var(--red);}
+  .sp-bar-track{
+    flex:1;height:clamp(22px,2.2vh,32px);background:var(--bg2);
+    border-radius:6px;overflow:hidden;position:relative;
+  }
+  .sp-bar-fill{
+    height:100%;background:linear-gradient(90deg,#dc2626,#f87171);
+    border-radius:6px;transition:width .8s cubic-bezier(.25,.9,.35,1);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .sp-bar-fill.correct{background:linear-gradient(90deg,#15803d,#4ade80);}
+  .sp-bar-cnt{
+    font-size:clamp(18px,1.8vw,28px);font-weight:900;
+    color:var(--t1);min-width:clamp(50px,5vw,80px);text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .sp-timeout-row{
+    margin-top:clamp(8px,1vh,14px);padding-top:clamp(8px,1vh,14px);
+    border-top:1px dashed rgba(148,163,184,.2);
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:clamp(14px,1.3vw,22px);color:var(--gold);font-weight:700;
+  }
+  .sp-reward-line{
+    font-size:clamp(14px,1.3vw,22px);line-height:1.6;color:var(--t1);
+    display:flex;align-items:center;gap:10px;margin-bottom:6px;
+  }
+  .sp-reward-line strong{color:var(--gold);font-weight:900;}
+  .sp-reward-line.special strong{color:var(--orange);}
 }
+
+/* ══ 야외모드 (고대비) — body.outdoor 토글 ══ */
+body.outdoor{
+  background:#000 !important;
+}
+body.outdoor .qtext,body.outdoor .ctext,body.outdoor .ox-big{
+  text-shadow:0 2px 8px #000,0 0 4px #000 !important;
+  font-weight:900 !important;
+}
+body.outdoor .qbox{
+  background:#0a0a0a !important;border-color:#fff !important;
+}
+body.outdoor .ccard{
+  background:#111 !important;border-color:#fff !important;
+}
+body.outdoor .ccard.correct{background:#003318 !important;border-color:#00ff88 !important;}
+body.outdoor .hnum{filter:brightness(1.4) !important;}
 </style>
 </head>
 <body>
@@ -378,6 +530,18 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
       <div class="qtext" id="qText">--</div>
     </div>
     <div id="contentArea" style="flex:1;display:flex;flex-direction:column;min-height:0;"></div>
+    <!-- 우측 통계/보상 패널 (울트라와이드에서만 표시) -->
+    <div id="statsPanel">
+      <div class="sp-card" id="spStatsCard">
+        <div class="sp-title">💀 탈락자 선택 분포</div>
+        <div id="spStatsBody"><div class="sp-empty">정답 공개 후 표시됩니다</div></div>
+      </div>
+      <div class="sp-card">
+        <div class="sp-title">🎁 상품 안내</div>
+        <div class="sp-reward-line">🎁 <span><strong>20등 이내</strong> 소정의 상품</span></div>
+        <div class="sp-reward-line special">🏆 <span>최종 <strong>골든벨 우승자</strong> 특별 상품!</span></div>
+      </div>
+    </div>
   </div>
 
   <div id="sGameover">
@@ -434,6 +598,7 @@ async function openQrOverlay(){
 function closeQrOverlay(){document.getElementById('qrOverlay').classList.remove('show');clearInterval(qpTimer);}
 
 socket.on('cf_url',({url})=>{const isNew=url&&url!==currentCfUrl;currentCfUrl=url;updateLobbyQr(url);document.getElementById('qrFab').classList.add('visible');if(isNew&&document.getElementById('sQuestion').style.display!=='none')openQrOverlay();});
+socket.on('outdoor_mode',({on})=>{document.body.classList.toggle('outdoor',!!on);});
 socket.on('connect',()=>{fetch('/api/status').then(r=>r.json()).then(d=>{if(!d.cfUrl)return;const isNew=d.cfUrl!==currentCfUrl;currentCfUrl=d.cfUrl;updateLobbyQr(d.cfUrl);document.getElementById('qrFab').classList.add('visible');if(isNew&&document.getElementById('sQuestion').style.display!=='none')openQrOverlay();}).catch(()=>{});});
 
 const uwMQ = window.matchMedia('(min-aspect-ratio: 2/1)');
@@ -463,6 +628,13 @@ function applyQuestionView(data){
   document.getElementById('trNum').textContent=data.timeLeft||'--';
   renderChoices(q.choices||[],q.type,data.phase==='REVEAL'?q.answer:undefined);
   if(data.phase==='REVEAL'&&data.answerStats)renderChart(data.answerStats,q.choices||[],q.answer,q.type);
+  // 탈락자 통계 패널 복원 (재접속 대비)
+  if(data.phase==='REVEAL'){
+    renderEliminatedStats(q.type,q.choices||[],q.answer,data.eliminatedStats||[],data.eliminatedNoAnswer||0);
+  } else {
+    const body=document.getElementById('spStatsBody');
+    if(body) body.innerHTML='<div class="sp-empty">정답 공개 후 표시됩니다</div>';
+  }
 }
 
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&socket.connected)socket.emit('request_state');});
@@ -498,6 +670,12 @@ socket.on('question',({index,total,question,choices,type,timeLimit:tl,round,qInR
   // 이전 정답 박스 즉시 닫기
   const arb=document.getElementById('ansRevealBox');
   if(arb){clearTimeout(arb._hideTimer);arb.classList.remove('show','hide');}
+  // 이전 elim 팝업 pending 타이머 취소 + 팝업 숨김
+  clearTimeout(window._elimPopTimer);
+  document.getElementById('elimPop')?.classList.remove('show');
+  // 이전 회차 탈락자 통계 패널 초기화
+  const spb=document.getElementById('spStatsBody');
+  if(spb) spb.innerHTML='<div class="sp-empty">정답 공개 후 표시됩니다</div>';
   renderChoices(choices,type);show('question');
 });
 
@@ -558,7 +736,7 @@ socket.on('text_answer_in',({name,text})=>{
 });
 socket.on('text_answer_cancelled',({name})=>{document.querySelector(`[data-name="${name}"]`)?.remove();});
 
-socket.on('reveal',({correctAnswer,correctAnswers,stats,eliminated:elims,survivorCount,type})=>{
+socket.on('reveal',({correctAnswer,correctAnswers,stats,eliminated:elims,survivorCount,type,eliminatedStats,eliminatedNoAnswer})=>{
   document.getElementById('hSurv').textContent=survivorCount;
   document.getElementById('lockBanner').style.display='none';
   applyFinalTen(survivorCount);
@@ -572,9 +750,52 @@ socket.on('reveal',({correctAnswer,correctAnswers,stats,eliminated:elims,survivo
   }
   showAnswerReveal(type,correctAnswer,correctAnswers,currentChoices);
   renderChartDebounced(stats||[],currentChoices,correctAnswer,type);
-  sfx((elims||[]).length>0?'wrong':'correct');
-  if((elims||[]).length>0){document.getElementById('elimNames').textContent=(elims||[]).length<=5?elims.join(', '):`${elims.length}명`;showPop('elimPop');}
+  // 탈락자 선택 통계 패널 렌더링
+  renderEliminatedStats(type,currentChoices,correctAnswer,eliminatedStats||[],eliminatedNoAnswer||0);
+  // 🔒 정답 팝업(중앙)과 탈락 팝업(중앙) 겹침 방지 → 해골 팝업은 2.5초 지연
+  const names = (elims||[]).map(e=>typeof e==='string'?e:e.name);
+  const timeoutNames = (elims||[]).filter(e=>e&&e.reason==='timeout').map(e=>e.name);
+  sfx(names.length>0?'wrong':'correct');
+  clearTimeout(window._elimPopTimer);
+  if(names.length>0){
+    window._elimPopTimer = setTimeout(()=>{
+      const label = timeoutNames.length===names.length && names.length>0
+        ? `⏰ 미답 ${names.length}명` : null;
+      document.getElementById('elimNames').textContent = label || (names.length<=5?names.join(', '):`${names.length}명`);
+      showPop('elimPop');
+    },2500);
+  }
 });
+
+function renderEliminatedStats(type,choices,correctIdx,elStats,noAnsCount){
+  const body = document.getElementById('spStatsBody'); if(!body) return;
+  const totalElim = (elStats||[]).reduce((a,b)=>a+(b||0),0) + (noAnsCount||0);
+  if(totalElim===0){
+    body.innerHTML = '<div class="sp-empty">🎉 탈락자 없음 — 전원 생존!</div>'; return;
+  }
+  if(type==='short'){
+    body.innerHTML = `<div class="sp-empty">미답 ${noAnsCount||0}명 · 오답 ${totalElim-(noAnsCount||0)}명</div>`;
+    return;
+  }
+  const max = Math.max(1, ...(elStats||[]));
+  const labels = type==='ox' ? ['O','X'] : LABELS;
+  let html = '';
+  (elStats||[]).forEach((cnt,i)=>{
+    const pct = Math.round((cnt/max)*100);
+    const isCorrect = i===correctIdx;
+    const lblCls = type==='ox' ? (i===0?'ox-o':'ox-x') : '';
+    const choiceTxt = (choices&&choices[i]) ? choices[i] : '';
+    html += `<div class="sp-bar-row">
+      <div class="sp-bar-lbl ${lblCls}" title="${choiceTxt}">${labels[i]||(i+1)}</div>
+      <div class="sp-bar-track"><div class="sp-bar-fill ${isCorrect?'correct':''}" style="width:${pct}%"></div></div>
+      <div class="sp-bar-cnt">${cnt||0}</div>
+    </div>`;
+  });
+  if(noAnsCount>0){
+    html += `<div class="sp-timeout-row"><span>⏰ 미답 탈락</span><span>${noAnsCount}명</span></div>`;
+  }
+  body.innerHTML = html;
+}
 
 function showAnswerReveal(type,correctAnswer,correctAnswers,choices){
   const box=document.getElementById('ansRevealBox');

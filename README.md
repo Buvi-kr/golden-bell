@@ -210,3 +210,49 @@ golden-bell/
 | 문제가 안 바뀜 | 서버 재시작 |
 | 재접속이 안 됨 | 정확히 같은 닉네임 입력, 30분 이내 재접속 |
 | 300명 접속 끊김 | 유선 인터넷 또는 5GHz Wi-Fi 권장 |
+| 터널이 10분마다 끊김 | start.bat의 Watchdog이 자동 재시작 (v6에서 해결) |
+
+---
+
+## 📦 패치노트
+
+### v6.0 — 2026-04-18
+
+#### 🔴 버그 수정
+- **[치명] short 타입 미답자가 생존하던 버그 수정**
+  - `normalize('') → includes(norm)` 이 항상 true 반환하는 문제 → 빈 문자열 early return 처리
+- **[중요] Cloudflare 터널 재시작 시 구 URL 고착 버그 수정**
+  - `parseCfLog()` 에서 `.match()` (non-global) 가 첫 번째 URL만 반환 → `/g` 플래그 + 마지막 매치 사용으로 재시작 후 자동 갱신
+
+#### 🟢 신규 기능
+- **Cloudflare Watchdog 자동 재시작** (`start.bat`)
+  - 10분 QUIC 타임아웃으로 터널 죽으면 3초 후 자동 재시작
+  - 서버·host.html·display.html 이 새 URL 자동 감지 및 QR 갱신
+- **탈락자 선택 통계 수집 및 시각화** (`server.js` + `display.html`)
+  - 문제마다 탈락자가 선택한 보기 분포 집계 (`eliminatedStats[]`)
+  - 미답 탈락자(`eliminatedReason: 'timeout'`) 별도 카운트
+  - 3840×1080 우측 패널에 막대그래프 표시
+- **3840×1080 초광폭 레이아웃** (`display.html`)
+  - 상단 10% 여백 + 20vh 대형 카운터 (생존/탈락/문제)
+  - 3단 그리드: `[좌 문제 28%] [중 보기 40%] [우 통계/보상 1fr]`
+  - 중앙에서 밀려나오는 스프레드 애니메이션 (순차 딜레이)
+  - 상품 안내 패널 상시 표시
+- **야외 고대비 모드** (`host.html` → `display.html`)
+  - 진행자 `☀️ 야외모드` 버튼 → 전체 화면 고대비 테마 브로드캐스트
+  - 순검정 배경, 강화 텍스트 그림자, 고채도 색상 — 햇빛 환경 가독성
+- **서버 헬스체크 배너** (`host.html`)
+  - 10초 간격 `/api/health` polling
+  - 터널 응답 없음 / 서버 다운 시 상단 빨간 경고 배너 자동 표시
+- **자동 재입장 강화** (`participant.html`)
+  - `session_not_found` 수신 시 저장된 닉네임으로 자동 재입장 시도
+  - 실패 시에만 수동 입장 화면으로 fallback (사용자 개입 최소화)
+- **탈락 사유 표시** (`participant.html`)
+  - 탈락 화면에 `⏰ 시간 초과` / 오답 구분 표시
+
+#### 🟡 개선
+- **정답 팝업 ↔ 탈락 해골 팝업 충돌 해결** (`display.html`)
+  - 정답 공개 박스 표시 후 2.5초 지연으로 탈락 팝업 순차 표시
+  - 새 문제 시작 시 pending 타이머 즉시 취소
+- **QR 코너 브라켓 완벽 대칭** (`display.html`)
+  - `right/bottom` 속성 사용으로 단순 대칭 보장 (이전 `calc` 오작동 수정)
+  - 28px, `box-sizing:border-box`, 14px border-radius, 순차 펄스 애니메이션

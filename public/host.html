@@ -160,6 +160,12 @@ header h1{font-size:16px;color:var(--orange);}
   </div>
 </header>
 
+<!-- 헬스 경고 배너 (서버/터널 이상 감지 시) -->
+<div id="healthBanner" style="display:none;background:#991b1b;color:#fff;padding:8px 16px;font-size:12px;font-weight:700;text-align:center;letter-spacing:.5px;border-bottom:2px solid #dc2626;animation:hbPulse 1.2s ease-in-out infinite;">
+  ⚠️ <span id="healthMsg">연결 확인 중...</span>
+</div>
+<style>@keyframes hbPulse{0%,100%{background:#991b1b}50%{background:#dc2626}}</style>
+
 <div class="layout">
 <!-- ══ 왼쪽 ══════════════════════════════════════════════════ -->
 <div class="panel panel-l">
@@ -220,7 +226,7 @@ header h1{font-size:16px;color:var(--orange);}
       <button class="btn btn-end" id="btnE"     onclick="confirmEnd()"   disabled>🏁 종료</button>
       <button class="btn btn-rst" id="btnReset" onclick="confirmReset()">🔄 초기화</button>
     </div>
-    <!-- 유틸리티 버튼 2×2 -->
+    <!-- 유틸리티 버튼 2×3 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
       <button class="btn" id="btnPause" onclick="togglePause()"
         style="background:#0369a1;color:#fff;font-size:10px;" disabled>⏸ 일시정지</button>
@@ -228,6 +234,8 @@ header h1{font-size:16px;color:var(--orange);}
         style="background:#4338ca;color:#fff;font-size:10px;">📱 QR 팝업</button>
       <button class="btn btn-rst" style="font-size:10px;" onclick="reloadQ()">📂 문제 로드</button>
       <button class="btn btn-rst" style="font-size:10px;color:var(--gold);" onclick="openJumpModal()">🎯 문제 지정</button>
+      <button class="btn" id="btnOutdoor" onclick="toggleOutdoor()"
+        style="background:#b45309;color:#fff;font-size:10px;grid-column:span 2;">☀️ 야외모드 OFF</button>
     </div>
   </div>
 
@@ -692,6 +700,49 @@ function hostNext()     {
 function reloadQ()      { socket.emit('host_reload_questions'); }
 function confirmEnd()   { if (confirm('게임을 종료하고 우승자를 발표하시겠습니까?')) socket.emit('host_end'); }
 function confirmReset() { if (confirm('초기화하시겠습니까? 모든 데이터가 삭제됩니다.')) socket.emit('host_reset'); }
+
+// ── 야외모드 토글 (display 에 브로드캐스트) ──
+let outdoorMode = localStorage.getItem('gb_outdoor') === '1';
+function applyOutdoorBtn() {
+  const b = document.getElementById('btnOutdoor');
+  if (!b) return;
+  b.textContent = outdoorMode ? '☀️ 야외모드 ON' : '☀️ 야외모드 OFF';
+  b.style.background = outdoorMode ? '#ea580c' : '#b45309';
+}
+function toggleOutdoor() {
+  outdoorMode = !outdoorMode;
+  localStorage.setItem('gb_outdoor', outdoorMode ? '1' : '0');
+  applyOutdoorBtn();
+  socket.emit('host_outdoor', { on: outdoorMode });
+}
+applyOutdoorBtn();
+// 페이지 로드 직후 현재 모드 동기화
+setTimeout(() => { if (outdoorMode) socket.emit('host_outdoor', { on: true }); }, 500);
+
+// ── 헬스체크 polling (10초) ──
+let healthFailCount = 0;
+async function pollHealth() {
+  const banner = document.getElementById('healthBanner');
+  const msg    = document.getElementById('healthMsg');
+  try {
+    const r = await fetch('/api/health', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    healthFailCount = 0;
+    if (d.cfUrl && d.cfAlive === false) {
+      banner.style.display = 'block';
+      msg.textContent = `⚠️ Cloudflare 터널 응답 없음 — QR 외부 접속 불가 가능성 (마지막 정상: ${new Date(d.ts - 120000).toLocaleTimeString('ko-KR')})`;
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch (e) {
+    healthFailCount++;
+    banner.style.display = 'block';
+    msg.textContent = `⚠️ 서버 응답 없음 (${healthFailCount}회 연속) — 네트워크/서버 확인 필요`;
+  }
+}
+setInterval(pollHealth, 10000);
+setTimeout(pollHealth, 2000);
 
 function openDisplay()     {
   const base = (document.getElementById('tunnelUrl').value.trim() || location.origin).replace(/\/$/, '');

@@ -185,6 +185,9 @@ const state = {
   gameLog:       [],
   qrPopupVisible: false,
   pendingStartIndex: 0,  // 0 = Q1부터, N = QN부터 시작
+  lastEliminatedStats:    [],
+  lastEliminatedNoAnswer: 0,
+  outdoorMode:            false,
 };
 
 function cq() { return state.mainQuestions[state.questionIndex]; }
@@ -239,7 +242,9 @@ function buildStateFor(sid) {
       answer:         state.phase === 'REVEAL' ? q.answer         : undefined,
       correctAnswers: state.phase === 'REVEAL' ? q.correctAnswers : undefined,
     } : null,
-    answerStats: state.phase === 'REVEAL' ? getAnswerStats() : null,
+    answerStats:       state.phase === 'REVEAL' ? getAnswerStats() : null,
+    eliminatedStats:   state.phase === 'REVEAL' ? (state.lastEliminatedStats || []) : null,
+    eliminatedNoAnswer:state.phase === 'REVEAL' ? (state.lastEliminatedNoAnswer || 0) : null,
   };
 }
 
@@ -264,7 +269,9 @@ function buildGenericState() {
       answer:         state.phase === 'REVEAL' ? q.answer         : undefined,
       correctAnswers: state.phase === 'REVEAL' ? q.correctAnswers : undefined,
     } : null,
-    answerStats: state.phase === 'REVEAL' ? getAnswerStats() : null,
+    answerStats:       state.phase === 'REVEAL' ? getAnswerStats() : null,
+    eliminatedStats:   state.phase === 'REVEAL' ? (state.lastEliminatedStats || []) : null,
+    eliminatedNoAnswer:state.phase === 'REVEAL' ? (state.lastEliminatedNoAnswer || 0) : null,
   };
 }
 
@@ -315,14 +322,20 @@ setInterval(() => {
 //  CLOUDFLARE LOG WATCHER
 // ══════════════════════════════════════════════════════════════
 const CF_LOG = path.join(__dirname, 'cloudflare.log');
-let cfUrl = '', cfLastSize = 0;
+let cfUrl = '', cfLastSize = 0, _tunnelLastOk = Date.now();
 
 function parseCfLog() {
   if (!fs.existsSync(CF_LOG)) return;
   try {
-    const m = fs.readFileSync(CF_LOG, 'utf8').match(/https:\/\/[\w-]+\.trycloudflare\.com/);
-    if (m && m[0] !== cfUrl) {
-      cfUrl = m[0]; log(`Tunnel URL: ${cfUrl}`); io.emit('cf_url', { url: cfUrl });
+    // /g 로 모든 URL 찾고 가장 마지막 것 사용 (watchdog 재시작 시 새 URL 반영)
+    const matches = fs.readFileSync(CF_LOG, 'utf8').match(/https:\/\/[\w-]+\.trycloudflare\.com/g);
+    if (matches && matches.length) {
+      const latest = matches[matches.length - 1];
+      if (latest !== cfUrl) {
+        cfUrl = latest;
+        log(`Tunnel URL: ${cfUrl}`);
+        io.emit('cf_url', { url: cfUrl });
+      }
     }
   } catch {}
 }
@@ -336,7 +349,11 @@ function watchCfLog() {
         if (stat.size > cfLastSize) {
           const fd = fs.openSync(CF_LOG, 'r'), buf = Buffer.alloc(stat.size - cfLastSize);
           fs.readSync(fd, buf, 0, buf.length, cfLastSize); fs.closeSync(fd);
-          buf.toString().split('\n').filter(Boolean).forEach(l => log(`[CF] ${l}`));
+          buf.toString().split('\n').filter(Boolean).forEach(l => {
+            log(`[CF] ${l}`);
+            // "Registered tunnel connection" 또는 일반 INF 라인 = 터널 살아있음
+            if (/Registered tunnel connection|INF Tunnel/.test(l)) _tunnelLastOk = Date.now();
+          });
           cfLastSize = stat.size;
         }
       } catch {}
@@ -358,6 +375,23 @@ app.get('/api/status', (req, res) => {
   res.json({ phase: state.phase, players: state.players.size, survivors: survivors().length,
     questions: state.mainQuestions.length, cfUrl, uptime: process.uptime() });
 });
+
+// 헬스체크 — 터널/서버 정상 여부 감시용 (host.html 이 polling)
+app.get('/api/health', (req, res) => {
+  const mem = process.memoryUsage();
+  res.json({
+    ok: true,
+    ts: Date.now(),
+    uptime: process.uptime(),
+    phase: state.phase,
+    players: state.players.size,
+    sockets: io.engine.clientsCount,
+    memMB: Math.round(mem.rss / 1024 / 1024),
+    cfUrl,
+    cfAlive: cfUrl ? (Date.now() - _tunnelLastOk < 120000) : false,
+  });
+});
+// _tunnelLastOk 는 watchCfLog 내부 ("Registered tunnel connection" / "INF Tunnel" 라인)에서 갱신
 
 app.get('/api/gamelog', (req, res) => res.json(state.gameLog));
 
@@ -394,6 +428,7 @@ io.on('connection', socket => {
   socket.emit('state', buildGenericState());
   if (cfUrl) socket.emit('cf_url', { url: cfUrl });
   socket.emit('game_log_history', state.gameLog.slice(-100));
+  if (state.outdoorMode) socket.emit('outdoor_mode', { on: true });
 
   socket.emit('player_list', [...state.players.values()].map(p => ({
     name: p.name, eliminated: p.eliminated,
@@ -595,6 +630,13 @@ io.on('connection', socket => {
     io.emit('reset'); broadcastState(); log('Game reset');
   });
 
+  socket.on('host_outdoor', ({ on }) => {
+    if (!isAdmin(socket)) return;
+    state.outdoorMode = !!on;
+    io.emit('outdoor_mode', { on: state.outdoorMode });
+    log(`Outdoor mode: ${state.outdoorMode ? 'ON' : 'OFF'}`);
+  });
+
   socket.on('host_reload_questions', () => {
     if (!isAdmin(socket)) return;
     const mainQ = loadQuestions();
@@ -685,17 +727,34 @@ function _doReveal() {
   const pool    = survivors();
   const newElim = [], correct = [];
 
+  // 탈락자 선택 통계 (choice/ox 기준)
+  const eliminatedStats = q.choices && q.choices.length
+    ? new Array(q.choices.length).fill(0)
+    : [];
+  let eliminatedNoAnswer = 0; // 미답으로 탈락한 인원수
+
   for (const p of pool) {
     let ok = false;
+    let reason = 'wrong';
     if (q.type === 'short') {
       const normalize = s => s.toLowerCase().replace(/[\s\.,\!\?]/g, '');
       const given = normalize(p.answerText || '');
-      ok = (q.correctAnswers || []).some(a => {
-        const norm = normalize(a);
-        return given.includes(norm) || norm.includes(given);
-      });
+      if (!given) {
+        // 🔒 미답 = 자동 탈락 (빈 문자열 매칭 버그 방지)
+        ok = false; reason = 'timeout';
+      } else {
+        ok = (q.correctAnswers || []).some(a => {
+          const norm = normalize(a);
+          if (!norm) return false;
+          return given === norm || given.includes(norm) || norm.includes(given);
+        });
+      }
     } else {
-      ok = p.answer === q.answer;
+      if (p.answer === null || p.answer === undefined) {
+        ok = false; reason = 'timeout';
+      } else {
+        ok = p.answer === q.answer;
+      }
     }
     const sid = [...state.players.entries()].find(([, pl]) => pl === p)?.[0];
     if (ok) {
@@ -703,25 +762,53 @@ function _doReveal() {
     } else {
       p.eliminated = true;
       p.eliminatedAtQuestion = state.questionIndex + 1;
-      newElim.push({ name: p.name, sid });
+      p.eliminatedReason     = reason;
+      newElim.push({ name: p.name, sid, reason, choice: p.answer, text: p.answerText });
+
+      // 통계 집계
+      if (reason === 'timeout') eliminatedNoAnswer++;
+      else if ((q.type === 'choice' || q.type === 'ox')
+               && typeof p.answer === 'number'
+               && eliminatedStats[p.answer] !== undefined) {
+        eliminatedStats[p.answer]++;
+      }
     }
   }
 
   state.phase = 'REVEAL';
-  const payload = { correctAnswer: q.answer, correctAnswers: q.correctAnswers, stats: getAnswerStats(), type: q.type };
+  // 현재 회차 통계 state에 보관 (재접속 시 복원용)
+  state.lastEliminatedStats    = eliminatedStats;
+  state.lastEliminatedNoAnswer = eliminatedNoAnswer;
 
-  io.emit('reveal', { ...payload, eliminated: newElim.map(e => e.name), survivors: correct, survivorCount: correct.length });
+  const payload = {
+    correctAnswer:  q.answer,
+    correctAnswers: q.correctAnswers,
+    stats:          getAnswerStats(),   // 생존자 선택 분포
+    eliminatedStats,                    // 탈락자 선택 분포
+    eliminatedNoAnswer,                 // 미답 탈락자 수
+    type:           q.type,
+  };
 
-  // 각 탈락자에게 서버 시간 잠금 정보 전송
-  for (const { sid } of newElim) {
+  io.emit('reveal', { ...payload,
+    eliminated: newElim.map(e => ({ name: e.name, reason: e.reason })),
+    survivors: correct, survivorCount: correct.length });
+
+  // 각 탈락자에게 서버 시간 + 사유 전송
+  for (const { sid, reason } of newElim) {
     if (sid) io.to(sid).emit('eliminated', {
       eliminatedAtQuestion: state.questionIndex + 1,
       serverStartTime:      SERVER_START_TIME,
       serverEliminatedTime: new Date().toISOString(),
+      reason, // 'timeout' or 'wrong'
     });
   }
 
-  addGameLog(`Reveal [${q.type}]: survived ${correct.length}, out ${newElim.length}`);
+  addGameLog(`Reveal [${q.type}]: survived ${correct.length}, out ${newElim.length}`
+    + (eliminatedNoAnswer ? ` (미답 ${eliminatedNoAnswer})` : ''));
+  if (newElim.length) {
+    const names = newElim.map(e => e.reason === 'timeout' ? `${e.name}(미답)` : e.name).join(', ');
+    addGameLog(`탈락: ${names}`);
+  }
   broadcastState(); saveSession();
 }
 
