@@ -63,10 +63,11 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:10px;color:var(--t3);font-size:14px;text-align:center;padding:20px;}
 .qc{position:absolute;width:22px;height:22px;border-color:var(--orange);border-style:solid;z-index:2;}
-.qc.tl{top:-5px;left:-5px;border-width:4px 0 0 4px;border-radius:4px 0 0 0;}
-.qc.tr{top:-5px;right:-5px;border-width:4px 4px 0 0;border-radius:0 4px 0 0;}
-.qc.bl{bottom:-5px;left:-5px;border-width:0 0 4px 4px;border-radius:0 0 0 4px;}
-.qc.br{bottom:-5px;right:-5px;border-width:0 4px 4px 0;border-radius:0 0 4px 0;}
+/* right/bottom 대신 left/top+calc 로 통일 — right 속성 오작동 방지 */
+.qc.tl{top:-5px;left:-5px;                       border-width:4px 0 0 4px;border-radius:4px 0 0 0;}
+.qc.tr{top:-5px;left:calc(100% - 17px);           border-width:4px 4px 0 0;border-radius:0 4px 0 0;}
+.qc.bl{top:calc(100% - 17px);left:-5px;           border-width:0 0 4px 4px;border-radius:0 0 0 4px;}
+.qc.br{top:calc(100% - 17px);left:calc(100% - 17px);border-width:0 4px 4px 0;border-radius:0 0 4px 0;}
 .qr-label{font-size:clamp(14px,1.5vw,21px);font-weight:700;color:var(--t1);text-align:center;}
 .qr-url{font-size:clamp(9px,.85vw,12px);color:var(--blue);text-align:center;max-width:clamp(165px,21vw,316px);word-break:break-all;opacity:.8;}
 
