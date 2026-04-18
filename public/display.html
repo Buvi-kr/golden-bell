@@ -218,7 +218,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   /* ─── 문제 화면 3열 그리드 ─────────────── */
   /* 열: [타이머 220px] [문제텍스트 1fr] [보기 45%] */
   #sQuestion{
-    display:grid !important;
+    display:grid;
     grid-template-columns:220px 1fr 45%;
     grid-template-rows:auto 1fr;
     grid-template-areas:
@@ -432,13 +432,21 @@ function closeQrOverlay(){document.getElementById('qrOverlay').classList.remove(
 socket.on('cf_url',({url})=>{const isNew=url&&url!==currentCfUrl;currentCfUrl=url;updateLobbyQr(url);document.getElementById('qrFab').classList.add('visible');if(isNew&&document.getElementById('sQuestion').style.display!=='none')openQrOverlay();});
 socket.on('connect',()=>{fetch('/api/status').then(r=>r.json()).then(d=>{if(!d.cfUrl)return;const isNew=d.cfUrl!==currentCfUrl;currentCfUrl=d.cfUrl;updateLobbyQr(d.cfUrl);document.getElementById('qrFab').classList.add('visible');if(isNew&&document.getElementById('sQuestion').style.display!=='none')openQrOverlay();}).catch(()=>{});});
 
+const uwMQ = window.matchMedia('(min-aspect-ratio: 2/1)');
+let _currentScreen = 'lobby';
+
 function show(id){
-  document.getElementById('sLobby').style.display=id==='lobby'?'flex':'none';
-  document.getElementById('sQuestion').style.display=id==='question'?'flex':'none';
-  document.getElementById('sGameover').style.display=id==='gameover'?'flex':'none';
+  _currentScreen = id;
+  const isUW = uwMQ.matches;
+  document.getElementById('sLobby').style.display    = id==='lobby'    ? 'flex' : 'none';
+  document.getElementById('sQuestion').style.display = id==='question' ? (isUW ? 'grid' : 'flex') : 'none';
+  document.getElementById('sGameover').style.display = id==='gameover' ? 'flex' : 'none';
   const fab=document.getElementById('qrFab');
   if(id==='lobby')fab.classList.remove('visible');else if(currentCfUrl)fab.classList.add('visible');
 }
+
+// 창 크기 바뀔 때 현재 화면 display 모드 재적용
+uwMQ.addEventListener('change', () => show(_currentScreen));
 function updateHeader(d){const tot=d.totalPlayers||0,surv=d.survivorCount||0;document.getElementById('hSurv').textContent=surv;document.getElementById('hElim').textContent=tot-surv;document.getElementById('hProg').textContent=d.questionIndex>=0?`${d.questionIndex+1}/${d.totalQuestions}`:'-';}
 function applyQuestionView(data){
   const q=data.question;if(!q)return;
