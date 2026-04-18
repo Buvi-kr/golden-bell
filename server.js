@@ -613,11 +613,11 @@ io.on('connection', socket => {
       socket.emit('question_jump_set', { targetQ: n, phase: 'LOBBY' });
       log(`Pending start index set: Q${n}`);
     } else if (state.phase === 'REVEAL') {
-      // _doNextQuestion()에서 ++ 하므로 n-2 세팅 (n=1이면 -1)
+      // _doNextQuestion()에서 ++ 하므로 n-2 세팅 후 즉시 실행
       state.questionIndex = n - 2;
       socket.emit('question_jump_set', { targetQ: n, phase: 'REVEAL' });
-      log(`Jump set: next question will be Q${n}`);
-      broadcastState();
+      log(`Jumped directly to Q${n}`);
+      _doNextQuestion(); // 바로 해당 문제 시작
     } else {
       socket.emit('question_jump_set', { targetQ: null, phase: state.phase, error: '이 상태에서는 지정 불가' });
     }

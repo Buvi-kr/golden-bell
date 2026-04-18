@@ -771,8 +771,8 @@ socket.on('question_jump_set', ({ targetQ, phase, error }) => {
   if (error) { toast('⚠️ ' + error, 3000); return; }
   const msg = phase === 'LOBBY'
     ? `🎯 Q${targetQ}번부터 시작 예약됨`
-    : `🎯 다음 ▶ 클릭 시 Q${targetQ}로 이동`;
-  toast(msg, 3500);
+    : `🎯 Q${targetQ}번으로 바로 이동!`;
+  toast(msg, 3000);
   if (phase === 'LOBBY')
     document.getElementById('roundIndicator').textContent = `📍 시작: Q${targetQ}번 예약됨`;
 });
