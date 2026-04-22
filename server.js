@@ -1,4 +1,4 @@
-// Speed Golden Bell Quiz Server v5.0
+// Speed Golden Bell Quiz Server v6.0
 'use strict';
 const express = require('express');
 const http    = require('http');
@@ -293,6 +293,21 @@ function startTimer(duration, onEnd) {
     if (state.timeLeft <= 0) { clearInterval(state.timerInterval); onEnd(); }
   }, 1000);
 }
+
+// ══════════════════════════════════════════════════════════════
+//  GHOST CLEANUP — 5분마다 30분 초과 ghost 자동 삭제 (메모리 누수 방지)
+// ══════════════════════════════════════════════════════════════
+setInterval(() => {
+  const LIMIT = 30 * 60 * 1000;
+  let purged = 0;
+  for (const [uid, g] of state.ghostPlayers) {
+    if (Date.now() - g.disconnectedAt > LIMIT) {
+      state.ghostPlayers.delete(uid);
+      purged++;
+    }
+  }
+  if (purged > 0) log(`Ghost cleanup: ${purged} expired ghosts removed (${state.ghostPlayers.size} remaining)`);
+}, 5 * 60 * 1000);
 
 // ══════════════════════════════════════════════════════════════
 //  MONITORING
@@ -828,7 +843,7 @@ function _endGame() {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   log('='.repeat(52));
-  log(`  Speed Golden Bell Server v5.0  |  Port: ${PORT}`);
+  log(`  Speed Golden Bell Server v6.0  |  Port: ${PORT}`);
   log('='.repeat(52));
   log(`  Host:        http://localhost:${PORT}/host.html`);
   log(`  Display:     http://localhost:${PORT}/display.html`);

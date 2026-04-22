@@ -1,0 +1,52 @@
+# Speed Golden Bell 부하 테스트 — Artillery
+# 사용법: npx artillery run loadtest.yml
+#
+# 시나리오: 100명이 5초에 걸쳐 접속 → 소켓 연결 유지 60초 → 랜덤 답변 제출
+#
+# 설치: npm install -D artillery artillery-plugin-socketio-v3
+# 실행: npx artillery run loadtest.yml --output result.json
+# 리포트: npx artillery report result.json
+
+config:
+  target: "http://localhost:3000"
+  plugins:
+    socketio-v3: {}
+  phases:
+    # 1단계: 20초 동안 100명 입장
+    - duration: 20
+      arrivalRate: 5        # 초당 5명 = 총 100명
+      name: "참여자 입장"
+    # 2단계: 60초 유지
+    - duration: 60
+      arrivalRate: 0
+      name: "게임 진행 유지"
+  socketio:
+    transports:
+      - websocket
+      - polling
+  defaults:
+    headers:
+      x-test-mode: "artillery"
+
+scenarios:
+  - name: "참여자 시뮬레이션"
+    engine: socketio-v3
+    flow:
+      # 접속 후 join 이벤트
+      - emit:
+          channel: "join"
+          data:
+            name: "테스터{{ $randomString(4) }}"
+            uid:  "test-{{ $randomString(8) }}"
+      # 상태 동기화 요청
+      - emit:
+          channel: "request_state"
+      # 30초 대기 (게임 진행 중 유지)
+      - think: 30
+      # 랜덤 답변 제출 (choice 타입 기준 0~3)
+      - emit:
+          channel: "answer"
+          data:
+            choice: "{{ $randomInt(0, 3) }}"
+      # 추가 15초 대기 후 종료
+      - think: 15

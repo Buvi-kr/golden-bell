@@ -731,7 +731,10 @@ async function pollHealth() {
     healthFailCount = 0;
     if (d.cfUrl && d.cfAlive === false) {
       banner.style.display = 'block';
-      msg.textContent = `⚠️ Cloudflare 터널 응답 없음 — QR 외부 접속 불가 가능성 (마지막 정상: ${new Date(d.ts - 120000).toLocaleTimeString('ko-KR')})`;
+      msg.textContent = `⚠️ Cloudflare 터널 응답 없음 — 외부 QR 접속 불가 가능성 (서버 업타임: ${Math.floor(d.uptime/60)}분)`;
+    } else if (!d.cfUrl) {
+      banner.style.display = 'block';
+      msg.textContent = '⚠️ 터널 URL 미감지 — cloudflared가 실행 중인지 확인하세요';
     } else {
       banner.style.display = 'none';
     }

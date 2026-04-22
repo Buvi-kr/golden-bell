@@ -4,3 +4,6 @@ session.json
 .DS_Store
 *.xlsx
 *.exe
+.claude/
+LOG.txt
+*-log-*.txt
