@@ -1,0 +1,1494 @@
+﻿diff --git a/public/display.html b/public/display.html
+index 10d3fc6..1126685 100644
+--- a/public/display.html
++++ b/public/display.html
+@@ -38,29 +38,37 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
+ .lobby-bg{position:absolute;inset:0;
+   background:radial-gradient(ellipse 55% 60% at 28% 50%,rgba(249,115,22,.07) 0%,transparent 70%),
+              radial-gradient(ellipse 50% 55% at 76% 50%,rgba(96,165,250,.05) 0%,transparent 70%);}
+-.lobby-left{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+-  gap:clamp(14px,2.2vh,28px);padding:40px 20px 40px 60px;position:relative;z-index:1;}
+-.lobby-bell{font-size:clamp(68px,9vw,128px);animation:bellring 3.5s ease-in-out infinite;}
++
++.lobby-qr-section{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
++  gap:clamp(8px,1.2vh,16px);padding:18px 20px 18px 50px;position:relative;z-index:1;min-height:0;}
++.lobby-info-section{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
++  gap:clamp(8px,1.2vh,18px);padding:18px 50px 18px 20px;position:relative;z-index:1;min-height:0;overflow:hidden;}
++
++.lobby-bell{font-size:clamp(48px,5.5vw,82px);line-height:1;animation:bellring 3.5s ease-in-out infinite;}
+ @keyframes bellring{0%,60%,100%{transform:rotate(0)}65%{transform:rotate(-12deg)}70%{transform:rotate(12deg)}75%{transform:rotate(-8deg)}80%{transform:rotate(8deg)}85%{transform:rotate(0)}}
+-.lobby-title{font-size:clamp(32px,5vw,70px);font-weight:900;color:var(--orange);letter-spacing:3px;text-align:center;text-shadow:0 0 40px rgba(249,115,22,.3);}
++.lobby-title{font-size:clamp(28px,3.6vw,56px);font-weight:900;color:var(--orange);letter-spacing:2px;text-align:center;text-shadow:0 0 40px rgba(249,115,22,.3);line-height:1.1;}
+ .lobby-count-card{background:rgba(30,41,59,.75);backdrop-filter:blur(8px);
+-  border:1px solid rgba(96,165,250,.25);border-radius:20px;
+-  padding:clamp(12px,1.8vw,24px) clamp(28px,4vw,52px);text-align:center;
++  border:1px solid rgba(96,165,250,.25);border-radius:18px;
++  padding:clamp(8px,1.2vw,16px) clamp(24px,3vw,40px);text-align:center;
+   box-shadow:0 4px 32px rgba(96,165,250,.1);}
+-.lobby-count-num{font-size:clamp(48px,8vw,118px);font-weight:900;color:var(--blue);
++.lobby-count-num{font-size:clamp(36px,5.5vw,84px);font-weight:900;color:var(--blue);
+   line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 0 30px rgba(96,165,250,.4);}
+-.lobby-count-lbl{font-size:clamp(12px,1.4vw,20px);color:var(--t2);margin-top:5px;letter-spacing:1px;}
+-.lobby-hint{font-size:clamp(12px,1.4vw,20px);color:var(--t2);animation:breathe 2.5s ease-in-out infinite;}
++.lobby-count-lbl{font-size:clamp(13px,1.4vw,20px);color:var(--t2);margin-top:4px;letter-spacing:1px;}
++.lobby-hint{font-size:clamp(14px,1.5vw,22px);color:var(--t2);animation:breathe 2.5s ease-in-out infinite;text-align:center;}
+ @keyframes breathe{0%,100%{opacity:.4}50%{opacity:1}}
+-.lobby-divider{width:1px;flex-shrink:0;margin:34px 0;
+-  background:linear-gradient(to bottom,transparent,rgba(249,115,22,.35) 20%,rgba(249,115,22,.35) 80%,transparent);}
+-.lobby-right{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+-  gap:clamp(10px,1.8vh,20px);padding:40px 60px 40px 20px;position:relative;z-index:1;}
+-.qr-card{background:#fff;border-radius:16px;padding:clamp(7px,1.1vw,14px);position:relative;overflow:visible;
++
++.lobby-prize-card{background:rgba(10,22,40,.8);border:2px solid rgba(245,158,11,.4);
++  border-radius:16px;padding:clamp(12px,1.5vw,22px) clamp(20px,2.5vw,36px);
++  text-align:center;margin-top:clamp(4px,.8vh,12px);
++  box-shadow:0 8px 32px rgba(245,158,11,.18);display:block;max-width:100%;}
++.prize-title{font-size:clamp(20px,2.4vw,34px);font-weight:900;color:var(--gold);margin-bottom:10px;letter-spacing:2px;}
++.prize-line{font-size:clamp(16px,1.9vw,28px);color:var(--t1);margin-bottom:8px;line-height:1.4;}
++.prize-line strong{color:var(--orange);}
++.qr-card{background:#fff;border-radius:14px;padding:clamp(6px,.9vw,12px);position:relative;overflow:visible;
+   box-shadow:0 0 0 6px rgba(249,115,22,.12),0 0 60px rgba(249,115,22,.17);}
+-.qr-card img{display:block;width:clamp(165px,21vw,316px);height:clamp(165px,21vw,316px);border-radius:7px;}
+-.qr-card-ph{width:clamp(165px,21vw,316px);height:clamp(165px,21vw,316px);background:var(--bg2);
+-  border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;
++.qr-card img{display:block;width:clamp(180px,18vw,280px);height:clamp(180px,18vw,280px);border-radius:6px;}
++.qr-card-ph{width:clamp(180px,18vw,280px);height:clamp(180px,18vw,280px);background:var(--bg2);
++  border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+   gap:10px;color:var(--t3);font-size:14px;text-align:center;padding:20px;}
+ /* QR 移대뱶 二쇳솴 肄붾꼫 釉뚮씪耳???right/bottom ?쇰줈 ?⑥닚 ?移?*/
+ .qc{position:absolute;width:28px;height:28px;box-sizing:border-box;
+@@ -76,9 +84,6 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
+ 
+ /* ?먥븧 臾몄젣 ?먥븧 */
+ #sQuestion{flex:1;display:none;flex-direction:column;gap:10px;padding:13px 38px;}
+-/* ?듦퀎 ?⑤꼸? 湲곕낯(?쇰컲 ?댁긽???먯꽌 ?④? ??UW 誘몃뵒?댁옘由ъ뿉?쒕쭔 ?쒖떆 */
+-#statsPanel{display:none;}
+-@media (min-aspect-ratio: 2/1){#statsPanel{display:flex !important;}}
+ .pt-row{display:flex;align-items:center;gap:13px;}
+ .prog-bar{flex:1;background:var(--bg2);border-radius:4px;height:7px;overflow:hidden;}
+ .prog-fill{height:100%;background:var(--orange);border-radius:4px;transition:width .4s;}
+@@ -100,7 +105,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
+   padding:7px;text-align:center;font-size:clamp(13px,1.5vw,19px);font-weight:700;color:var(--green);flex-shrink:0;}
+ .qbox{background:var(--bg2);border:2px solid var(--bg3);border-radius:15px;
+   padding:clamp(13px,1.8vw,24px) clamp(17px,2.8vw,36px);text-align:center;flex-shrink:0;}
+-.qnum{font-size:13px;color:var(--t3);margin-bottom:5px;}
++.qnum{font-size:clamp(14px,1.4vw,18px);font-weight:700;color:var(--orange);margin-bottom:8px;letter-spacing:1px;}
+ .qtext{font-size:clamp(21px,2.8vw,37px);font-weight:800;line-height:1.4;color:var(--t1);}
+ 
+ /* 蹂닿린 */
+@@ -136,7 +141,9 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
+ .short-chip.wrong{opacity:.33;text-decoration:line-through;}
+ 
+ /* 李⑦듃 */
+-.chart-wrap{flex:1;position:relative;min-height:0;}
++.chart-wrap{flex:1;position:relative;min-height:0;padding:10px 4px;
++  background:linear-gradient(180deg,rgba(15,30,54,.4) 0%,rgba(10,22,40,.2) 100%);
++  border:1px solid rgba(96,165,250,.12);border-radius:14px;}
+ 
+ /* ?앹뾽 */
+ .pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+@@ -260,18 +267,17 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
+     color:var(--t2);
+   }
+ 
+-  /* ??? 臾몄젣 ?붾㈃ 3??洹몃━????????????????? */
+-  /* ?? [醫?臾몄젣 28%] [以?蹂닿린 40%] [???듦퀎 ?⑤꼸 1fr] */
++  /* ??? 臾몄젣 ?붾㈃ 2??洹몃━????????????????? */
++  /* ?? [醫?臾몄젣 32%] [??蹂닿린/李⑦듃 1fr] */
+   #sQuestion{
+-    display:grid;
+-    grid-template-columns:28% 40% 1fr;
++    grid-template-columns:32% 1fr;
+     grid-template-rows:auto auto 1fr;
+     grid-template-areas:
+-      "timer  banner   banner"
+-      "qbox   choices  stats"
+-      "qbox   choices  stats";
++      "timer  banner"
++      "qbox   choices"
++      "qbox   choices";
+     padding:clamp(24px,3vh,48px) clamp(40px,4vw,96px);
+-    gap:clamp(16px,1.8vh,28px) clamp(24px,2.5vw,52px);
++    gap:clamp(16px,1.8vh,28px) clamp(28px,3vw,60px);
+     align-items:stretch;
+   }
+   /* ??대㉧: ?곷떒 媛濡??꾩껜 諛곌꼍???ш쾶 以묒븰 */
+@@ -307,12 +313,6 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
+     animation:spreadIn .6s cubic-bezier(.25,.9,.35,1.05) both;
+     animation-delay:.15s;
+   }
+-  #statsPanel{
+-    grid-area:stats;
+-    display:flex;flex-direction:column;gap:16px;min-height:0;
+-    animation:spreadIn .6s cubic-bezier(.25,.9,.35,1.05) both;
+-    animation-delay:.25s;
+-  }
+ 
+   /* ??? ?ㅽ봽?덈뱶 ?좊땲硫붿씠??(以묒븰?먯꽌 諛뺤뒪 ?뺥깭濡?諛?ㅻ굹?ㅻ뒗 ?곗텧) ??? */
+   @keyframes spreadIn{
+@@ -369,21 +369,31 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
+   .short-grid{max-height:clamp(110px,18vh,200px);}
+ 
+   /* ??? 濡쒕퉬 ??????????????????????????????? */
+-  .lobby-bell{font-size:clamp(90px,12vw,180px);}
+-  .lobby-title{font-size:clamp(56px,8vw,130px);letter-spacing:5px;}
+-  .lobby-count-num{font-size:clamp(80px,14vw,200px);}
+-  .lobby-count-lbl{font-size:clamp(16px,2vw,32px);}
+-  .lobby-hint{font-size:clamp(16px,1.8vw,28px);}
++  #sLobby{flex-direction:row;}
++  .lobby-qr-section{flex:1;align-items:center;justify-content:center;padding:0;}
++  .lobby-info-section{flex:1;align-items:center;justify-content:center;padding:0;}
++  
++  .lobby-bell{font-size:clamp(120px,15vw,220px);}
++  .lobby-title{font-size:clamp(80px,10vw,160px);letter-spacing:5px;text-align:center; margin-bottom: 2vh;}
++  .lobby-count-card{text-align:center;padding:clamp(32px,4vw,60px) clamp(64px,6vw,100px);}
++  .lobby-count-num{font-size:clamp(120px,18vw,280px);}
++  .lobby-count-lbl{font-size:clamp(24px,3vw,48px);}
++  .lobby-hint{font-size:clamp(24px,3vw,48px);text-align:center; margin-top: 2vh;}
++  .lobby-prize-card{display:block;text-align:center;margin-top:40px; padding: clamp(30px,4vw,50px) clamp(40px,5vw,80px); border-width: 4px;}
++  
++  .lobby-prize-card .prize-title { font-size: clamp(36px, 4vw, 64px); margin-bottom: 24px; }
++  .lobby-prize-card .prize-line { font-size: clamp(28px, 3vw, 48px); line-height: 1.5; margin-bottom: 16px; }
++  
+   .qr-card img{
+-    width:clamp(230px,27vw,440px) !important;
+-    height:clamp(230px,27vw,440px) !important;
++    width:clamp(400px,38vw,800px) !important;
++    height:clamp(400px,38vw,800px) !important;
+   }
+   .qr-card-ph{
+-    width:clamp(230px,27vw,440px) !important;
+-    height:clamp(230px,27vw,440px) !important;
++    width:clamp(400px,38vw,800px) !important;
++    height:clamp(400px,38vw,800px) !important;
+   }
+-  .qr-label{font-size:clamp(18px,2vw,34px);}
+-  .qr-url{font-size:clamp(11px,1vw,16px);}
++  .qr-label{font-size:clamp(36px,4vw,64px); margin-top: 24px;}
++  .qr-url{font-size:clamp(20px,2vw,32px);}
+ 
+   /* ??? 醫낅즺 ?붾㈃ ??????????????????????????? */
+   .go-icon{font-size:clamp(110px,16vw,220px);}
+@@ -395,58 +405,6 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
+   .arb-answer{font-size:clamp(44px,6.5vw,110px);}
+   #ansRevealBox{padding:clamp(22px,3vw,50px) clamp(48px,7vw,120px);border-width:4px;}
+ 
+-  /* ??? ?곗륫 ?듦퀎/蹂댁긽 ?⑤꼸 ???????????????? */
+-  #statsPanel .sp-card{
+-    background:linear-gradient(145deg,#0f1e36,#0a1628);
+-    border:2px solid rgba(148,163,184,.18);border-radius:20px;
+-    padding:clamp(14px,1.8vh,24px) clamp(18px,2vw,32px);
+-    box-shadow:0 6px 24px rgba(0,0,0,.28);
+-  }
+-  #statsPanel .sp-title{
+-    font-size:clamp(16px,1.5vw,24px);font-weight:800;color:var(--t1);
+-    margin-bottom:clamp(10px,1.4vh,18px);letter-spacing:1.5px;
+-    display:flex;align-items:center;gap:10px;
+-  }
+-  #statsPanel .sp-empty{
+-    font-size:clamp(13px,1.1vw,18px);color:var(--t3);text-align:center;padding:20px 0;
+-  }
+-  .sp-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:clamp(8px,1vh,14px);}
+-  .sp-bar-lbl{
+-    width:clamp(36px,3.2vw,52px);height:clamp(36px,3.2vw,52px);
+-    border-radius:50%;background:var(--bg3);
+-    display:flex;align-items:center;justify-content:center;
+-    font-size:clamp(16px,1.5vw,24px);font-weight:900;color:var(--t2);
+-    flex-shrink:0;
+-  }
+-  .sp-bar-lbl.ox-o{background:#1e3a5f;color:var(--blue);}
+-  .sp-bar-lbl.ox-x{background:#2d0f0f;color:var(--red);}
+-  .sp-bar-track{
+-    flex:1;height:clamp(22px,2.2vh,32px);background:var(--bg2);
+-    border-radius:6px;overflow:hidden;position:relative;
+-  }
+-  .sp-bar-fill{
+-    height:100%;background:linear-gradient(90deg,#dc2626,#f87171);
+-    border-radius:6px;transition:width .8s cubic-bezier(.25,.9,.35,1);
+-    box-shadow:inset 0 1px 0 rgba(255,255,255,.15);
+-  }
+-  .sp-bar-fill.correct{background:linear-gradient(90deg,#15803d,#4ade80);}
+-  .sp-bar-cnt{
+-    font-size:clamp(18px,1.8vw,28px);font-weight:900;
+-    color:var(--t1);min-width:clamp(50px,5vw,80px);text-align:right;
+-    font-variant-numeric:tabular-nums;
+-  }
+-  .sp-timeout-row{
+-    margin-top:clamp(8px,1vh,14px);padding-top:clamp(8px,1vh,14px);
+-    border-top:1px dashed rgba(148,163,184,.2);
+-    display:flex;align-items:center;justify-content:space-between;
+-    font-size:clamp(14px,1.3vw,22px);color:var(--gold);font-weight:700;
+-  }
+-  .sp-reward-line{
+-    font-size:clamp(14px,1.3vw,22px);line-height:1.6;color:var(--t1);
+-    display:flex;align-items:center;gap:10px;margin-bottom:6px;
+-  }
+-  .sp-reward-line strong{color:var(--gold);font-weight:900;}
+-  .sp-reward-line.special strong{color:var(--orange);}
+ }
+ 
+ /* ?먥븧 ?쇱쇅紐⑤뱶 (怨좊?鍮? ??body.outdoor ?좉? ?먥븧 */
+@@ -491,7 +449,19 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
+ 
+   <div id="sLobby">
+     <div class="lobby-bg"></div>
+-    <div class="lobby-left">
++    
++    <!-- 醫뚯륫: ???QR -->
++    <div class="lobby-qr-section">
++      <div class="qr-card">
++        <img id="lobbyQrImg" src="" alt="" style="display:none;">
++        <div class="qr-card-ph" id="lobbyQrPh"><span style="font-size:34px">?뱻</span><span>?쒕쾭 ?쒖옉 ???먮룞 ?쒖떆</span></div>
++      </div>
++      <div class="qr-label">?벒 ?ㅼ틪?섏뿬 李몄뿬</div>
++      <div class="qr-url" id="qrUrlText"></div>
++    </div>
++
++    <!-- ?곗륫: ?뺣낫 諛??곹뭹 ?덈궡 -->
++    <div class="lobby-info-section">
+       <div class="lobby-bell">??/div>
+       <div class="lobby-title">?ㅽ뵾??怨⑤뱺踰?/div>
+       <div class="lobby-count-card">
+@@ -499,16 +469,13 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
+         <div class="lobby-count-lbl">紐??낆옣 ?꾨즺</div>
+       </div>
+       <div class="lobby-hint">?벑 QR肄붾뱶瑜??ㅼ틪?섍퀬 ?낆옣?섏꽭??</div>
+-    </div>
+-    <div class="lobby-divider"></div>
+-    <div class="lobby-right">
+-      <div class="qr-card">
+-        <div class="qc tl"></div><div class="qc tr"></div><div class="qc bl"></div><div class="qc br"></div>
+-        <img id="lobbyQrImg" src="" alt="" style="display:none;">
+-        <div class="qr-card-ph" id="lobbyQrPh"><span style="font-size:34px">?뱻</span><span>?쒕쾭 ?쒖옉 ???먮룞 ?쒖떆</span></div>
++      
++      <!-- ?곹뭹 ?덈궡 ?⑤꼸 異붽? (?명듃?쇱??대뱶?먯꽌 ?ш쾶 ?쒖떆) -->
++      <div class="lobby-prize-card" id="lobbyPrizeCard">
++        <div class="prize-title">?럞 ?곹뭹 ?덈궡</div>
++        <div class="prize-line">?룇 <strong>理쒖쥌 ?곗듅 (怨⑤뱺踰?</strong> - ?밸퀎 ?곹뭹!</div>
++        <div class="prize-line">?럦 <strong>20???대궡 ?앹〈??/strong> - ?뚯젙???곹뭹</div>
+       </div>
+-      <div class="qr-label">?벒 ?ㅼ틪?섏뿬 李몄뿬</div>
+-      <div class="qr-url" id="qrUrlText"></div>
+     </div>
+   </div>
+ 
+@@ -530,18 +497,6 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
+       <div class="qtext" id="qText">--</div>
+     </div>
+     <div id="contentArea" style="flex:1;display:flex;flex-direction:column;min-height:0;"></div>
+-    <!-- ?곗륫 ?듦퀎/蹂댁긽 ?⑤꼸 (?명듃?쇱??대뱶?먯꽌留??쒖떆) -->
+-    <div id="statsPanel">
+-      <div class="sp-card" id="spStatsCard">
+-        <div class="sp-title">?? ?덈씫???좏깮 遺꾪룷</div>
+-        <div id="spStatsBody"><div class="sp-empty">?뺣떟 怨듦컻 ???쒖떆?⑸땲??/div></div>
+-      </div>
+-      <div class="sp-card">
+-        <div class="sp-title">?럞 ?곹뭹 ?덈궡</div>
+-        <div class="sp-reward-line">?럞 <span><strong>20???대궡</strong> ?뚯젙???곹뭹</span></div>
+-        <div class="sp-reward-line special">?룇 <span>理쒖쥌 <strong>怨⑤뱺踰??곗듅??/strong> ?밸퀎 ?곹뭹!</span></div>
+-      </div>
+-    </div>
+   </div>
+ 
+   <div id="sGameover">
+@@ -619,22 +574,22 @@ uwMQ.addEventListener('change', () => show(_currentScreen));
+ function updateHeader(d){const tot=d.totalPlayers||0,surv=d.survivorCount||0;document.getElementById('hSurv').textContent=surv;document.getElementById('hElim').textContent=tot-surv;document.getElementById('hProg').textContent=d.questionIndex>=0?`${d.questionIndex+1}/${d.totalQuestions}`:'-';}
+ function applyQuestionView(data){
+   const q=data.question;if(!q)return;
+-  const round = data.round || (Math.floor(data.questionIndex/15)+1);
+-  const qInRound = data.qInRound || ((data.questionIndex%15)+1);
+-  document.getElementById('qNum').textContent=`${round}?뚯감 ??${qInRound}踰덉㎏ 臾몄젣  (${data.questionIndex+1}/${data.totalQuestions})`;
++  const qNumEl=document.getElementById('qNum');
++  if(data.isGoldenBell){
++    qNumEl.textContent=`?뵒 怨⑤뱺踰?${data.goldenBellNum}踰덉㎏ 臾몄젣`;
++    qNumEl.style.color='#fcd34d';
++  } else {
++    const round=data.round||(Math.floor(data.questionIndex/15)+1);
++    const qInRound=data.qInRound||((data.questionIndex%15)+1);
++    qNumEl.textContent=`${round}?뚯감 ??${qInRound}/15`;
++    qNumEl.style.color='';
++  }
+   document.getElementById('qTypeBadge').innerHTML=`<span class="type-badge ${tbClass[q.type]||'tb-choice'}">${typeMap[q.type]||q.type}</span>`;
+   document.getElementById('qText').textContent=q.question;
+   document.getElementById('progFill').style.width=`${((data.questionIndex+1)/data.totalQuestions)*100}%`;
+   document.getElementById('trNum').textContent=data.timeLeft||'--';
+   renderChoices(q.choices||[],q.type,data.phase==='REVEAL'?q.answer:undefined);
+-  if(data.phase==='REVEAL'&&data.answerStats)renderChart(data.answerStats,q.choices||[],q.answer,q.type);
+-  // ?덈씫???듦퀎 ?⑤꼸 蹂듭썝 (?ъ젒???鍮?
+-  if(data.phase==='REVEAL'){
+-    renderEliminatedStats(q.type,q.choices||[],q.answer,data.eliminatedStats||[],data.eliminatedNoAnswer||0);
+-  } else {
+-    const body=document.getElementById('spStatsBody');
+-    if(body) body.innerHTML='<div class="sp-empty">?뺣떟 怨듦컻 ???쒖떆?⑸땲??/div>';
+-  }
++  if(data.phase==='REVEAL'&&data.answerStats)renderChart(data.answerStats,data.eliminatedStats||[],q.choices||[],q.answer,q.type);
+ }
+ 
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&socket.connected)socket.emit('request_state');});
+@@ -649,16 +604,24 @@ socket.on('state_sync',data=>{
+ socket.on('state',data=>{
+   updateHeader(data);document.getElementById('lCount').textContent=data.totalPlayers||0;
+   document.getElementById('lockBanner').style.display=data.answersClosed&&data.phase==='QUESTION'?'block':'none';
+-  if(data.phase==='LOBBY'){show('lobby');return;}if(data.phase==='GAMEOVER')return;
++  if(data.phase==='LOBBY'){show('lobby');return;}
++  if(data.phase==='GAMEOVER'){show('gameover');return;}
+   show('question');applyQuestionView(data);
+ });
+ socket.on('player_joined',({total})=>{document.getElementById('lCount').textContent=total;document.getElementById('hSurv').textContent=total;});
+ socket.on('player_left',({total})=>document.getElementById('lCount').textContent=total);
+ 
+-socket.on('question',({index,total,question,choices,type,timeLimit:tl,round,qInRound})=>{
++socket.on('question',({index,total,question,choices,type,timeLimit:tl,round,qInRound,isGoldenBell,goldenBellNum})=>{
+   timeLimit=tl||15;submittedCount=0;answersLocked=false;
+-  const roundTxt=(round&&qInRound)?`${round}?뚯감 ??${qInRound}踰덉㎏ 臾몄젣  (${index+1}/${total})`:`臾몄젣 ${index+1} / ${total}`;
+-  document.getElementById('qNum').textContent=roundTxt;
++  const qNumEl=document.getElementById('qNum');
++  if(isGoldenBell){
++    qNumEl.textContent=`?뵒 怨⑤뱺踰?${goldenBellNum}踰덉㎏ 臾몄젣`;
++    qNumEl.style.color='#fcd34d';
++  } else {
++    const roundTxt=(round&&qInRound)?`${round}?뚯감 ??${qInRound}/15`:`臾몄젣 ${index+1}`;
++    qNumEl.textContent=roundTxt;
++    qNumEl.style.color='';
++  }
+   document.getElementById('qTypeBadge').innerHTML=`<span class="type-badge ${tbClass[type]||'tb-choice'}">${typeMap[type]||type}</span>`;
+   document.getElementById('qText').textContent=question;
+   document.getElementById('progFill').style.width=`${((index+1)/total)*100}%`;
+@@ -673,9 +636,6 @@ socket.on('question',({index,total,question,choices,type,timeLimit:tl,round,qInR
+   // ?댁쟾 elim ?앹뾽 pending ??대㉧ 痍⑥냼 + ?앹뾽 ?④?
+   clearTimeout(window._elimPopTimer);
+   document.getElementById('elimPop')?.classList.remove('show');
+-  // ?댁쟾 ?뚯감 ?덈씫???듦퀎 ?⑤꼸 珥덇린??-  const spb=document.getElementById('spStatsBody');
+-  if(spb) spb.innerHTML='<div class="sp-empty">?뺣떟 怨듦컻 ???쒖떆?⑸땲??/div>';
+   renderChoices(choices,type);show('question');
+ });
+ 
+@@ -742,16 +702,15 @@ socket.on('reveal',({correctAnswer,correctAnswers,stats,eliminated:elims,survivo
+   applyFinalTen(survivorCount);
+   fetch('/api/status').then(r=>r.json()).then(d=>{document.getElementById('hElim').textContent=d.players-d.survivors;}).catch(()=>{});
+   if(type==='short'&&correctAnswers){
++    const norm = s => s.toLowerCase().replace(/[\s\.,\!\?]/g,'');
+     document.getElementById('shortGrid')?.querySelectorAll('.short-chip').forEach(chip=>{
+-      const t=chip.textContent.toLowerCase().replace(/\s/g,'');
+-      const ok=correctAnswers.some(a=>{const n=a.replace(/\s/g,'');return t.includes(n)||n.includes(t);});
++      const t=norm(chip.textContent);
++      const ok=correctAnswers.some(a=>{const n=norm(a);return n && (t===n || t.includes(n) || n.includes(t));});
+       chip.classList.toggle('correct',ok);chip.classList.toggle('wrong',!ok);
+     });
+   }
+   showAnswerReveal(type,correctAnswer,correctAnswers,currentChoices);
+-  renderChartDebounced(stats||[],currentChoices,correctAnswer,type);
+-  // ?덈씫???좏깮 ?듦퀎 ?⑤꼸 ?뚮뜑留?-  renderEliminatedStats(type,currentChoices,correctAnswer,eliminatedStats||[],eliminatedNoAnswer||0);
++  renderChartDebounced(stats||[],eliminatedStats||[],currentChoices,correctAnswer,type);
+   // ?뵏 ?뺣떟 ?앹뾽(以묒븰)怨??덈씫 ?앹뾽(以묒븰) 寃뱀묠 諛⑹? ???닿낏 ?앹뾽? 2.5珥?吏??   const names = (elims||[]).map(e=>typeof e==='string'?e:e.name);
+   const timeoutNames = (elims||[]).filter(e=>e&&e.reason==='timeout').map(e=>e.name);
+@@ -767,36 +726,6 @@ socket.on('reveal',({correctAnswer,correctAnswers,stats,eliminated:elims,survivo
+   }
+ });
+ 
+-function renderEliminatedStats(type,choices,correctIdx,elStats,noAnsCount){
+-  const body = document.getElementById('spStatsBody'); if(!body) return;
+-  const totalElim = (elStats||[]).reduce((a,b)=>a+(b||0),0) + (noAnsCount||0);
+-  if(totalElim===0){
+-    body.innerHTML = '<div class="sp-empty">?럦 ?덈씫???놁쓬 ???꾩썝 ?앹〈!</div>'; return;
+-  }
+-  if(type==='short'){
+-    body.innerHTML = `<div class="sp-empty">誘몃떟 ${noAnsCount||0}紐?쨌 ?ㅻ떟 ${totalElim-(noAnsCount||0)}紐?/div>`;
+-    return;
+-  }
+-  const max = Math.max(1, ...(elStats||[]));
+-  const labels = type==='ox' ? ['O','X'] : LABELS;
+-  let html = '';
+-  (elStats||[]).forEach((cnt,i)=>{
+-    const pct = Math.round((cnt/max)*100);
+-    const isCorrect = i===correctIdx;
+-    const lblCls = type==='ox' ? (i===0?'ox-o':'ox-x') : '';
+-    const choiceTxt = (choices&&choices[i]) ? choices[i] : '';
+-    html += `<div class="sp-bar-row">
+-      <div class="sp-bar-lbl ${lblCls}" title="${choiceTxt}">${labels[i]||(i+1)}</div>
+-      <div class="sp-bar-track"><div class="sp-bar-fill ${isCorrect?'correct':''}" style="width:${pct}%"></div></div>
+-      <div class="sp-bar-cnt">${cnt||0}</div>
+-    </div>`;
+-  });
+-  if(noAnsCount>0){
+-    html += `<div class="sp-timeout-row"><span>??誘몃떟 ?덈씫</span><span>${noAnsCount}紐?/span></div>`;
+-  }
+-  body.innerHTML = html;
+-}
+-
+ function showAnswerReveal(type,correctAnswer,correctAnswers,choices){
+   const box=document.getElementById('ansRevealBox');
+   const txt=document.getElementById('ansRevealText');
+@@ -851,16 +780,75 @@ function renderChoices(choices,type,revealAns){
+   }
+ }
+ 
+-function renderChart(stats,choices,correctAns,type){
++function renderChart(stats,elimStats,choices,correctAns,type){
++  if(type === 'short') return;
+   const area=document.getElementById('contentArea');
+   area.innerHTML='<div class="chart-wrap"><canvas id="ansChart"></canvas></div>';
+   const ctx2=document.getElementById('ansChart').getContext('2d');
+   if(ansChart)ansChart.destroy();
+-  const labels=choices.map((c,i)=>`${LABELS[i]||i+1}  ${c}`);
+-  ansChart=new Chart(ctx2,{type:'bar',data:{labels,datasets:[{data:stats,backgroundColor:stats.map((_,i)=>i===correctAns?'#4ade80':'#475569'),borderRadius:9,borderSkipped:false}]},
+-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw}紐?}}},
+-      scales:{x:{ticks:{color:'#94a3b8',font:{size:15,weight:'700'}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',stepSize:1},grid:{color:'#1e293b'},beginAtZero:true}},
+-      animation:{duration:900,easing:'easeOutBounce'}}});
++
++  // OX????狩뺚쓬, 媛앷??앹? ?쇰꺼+?띿뒪??+  const labels = type==='ox'
++    ? choices.map((c,i)=> i===0 ? '狩? O' : '?? X')
++    : choices.map((c,i)=>`${LABELS[i]||i+1}  ${c}`);
++
++  const len = Math.max((stats||[]).length, (elimStats||[]).length, choices.length);
++  const survData = Array.from({length: len}, (_, i) => (stats[i] || 0));
++  const elimData = Array.from({length: len}, (_, i) => (elimStats[i] || 0));
++
++  // ?ㅽ깮 李⑦듃: ?앹〈(?뱀깋) + ?덈씫(鍮④컯) ???뺣떟 留됰?留??뱀깋??李④퀬, ?ㅻ떟 留됰???鍮④컯留?李⑥삤由?+  ansChart=new Chart(ctx2,{
++    type:'bar',
++    data:{
++      labels,
++      datasets:[
++        {
++          label:'???앹〈',
++          data:survData,
++          backgroundColor: survData.map((_,i)=> i===correctAns ? 'rgba(74,222,128,0.92)' : 'rgba(148,163,184,0.35)'),
++          borderColor: survData.map((_,i)=> i===correctAns ? '#4ade80' : 'rgba(148,163,184,0.5)'),
++          borderWidth: 1,
++          borderRadius: 4,
++        },
++        {
++          label:'?? ?덈씫',
++          data:elimData,
++          backgroundColor: elimData.map((_,i)=> i===correctAns ? 'rgba(245,158,11,0.75)' : 'rgba(248,113,113,0.92)'),
++          borderColor: elimData.map((_,i)=> i===correctAns ? '#f59e0b' : '#f87171'),
++          borderWidth: 1,
++          borderRadius: 4,
++        }
++      ]
++    },
++    options:{
++      responsive:true,
++      maintainAspectRatio:false,
++      plugins:{
++        legend:{
++          display:true,
++          position:'top',
++          labels:{
++            color:'#cbd5e1',
++            font:{size:16,weight:'700'},
++            padding:14,
++            boxWidth:18,
++            boxHeight:18,
++          }
++        },
++        tooltip:{
++          callbacks:{
++            label:c=>`${c.dataset.label}: ${c.raw}紐?,
++            footer:items=>`?⑷퀎: ${items.reduce((a,b)=>a+b.parsed.y,0)}紐?
++          }
++        }
++      },
++      scales:{
++        x:{stacked:true,ticks:{color:'#cbd5e1',font:{size:18,weight:'700'}},grid:{color:'#1e293b'}},
++        y:{stacked:true,ticks:{color:'#94a3b8',stepSize:1,font:{size:14}},grid:{color:'#1e293b'},beginAtZero:true}
++      },
++      animation:{duration:900,easing:'easeOutBounce'}
++    }
++  });
+ }
+ 
+ function showPop(id,dur=3500){const el=document.getElementById(id);el.classList.add('show');setTimeout(()=>el.classList.remove('show'),dur);}
+@@ -907,8 +895,8 @@ function sfx(type){
+ }
+ 
+ let chartDebounceTimer=null,pendingChartArgs=null;
+-function renderChartDebounced(stats,choices,correctAns,type){
+-  pendingChartArgs=[stats,choices,correctAns,type];
++function renderChartDebounced(stats,elimStats,choices,correctAns,type){
++  pendingChartArgs=[stats,elimStats,choices,correctAns,type];
+   clearTimeout(chartDebounceTimer);
+   chartDebounceTimer=setTimeout(()=>{if(pendingChartArgs)renderChart(...pendingChartArgs);pendingChartArgs=null;},200);
+ }
+diff --git a/public/host.html b/public/host.html
+index ef60d2c..b13121a 100644
+--- a/public/host.html
++++ b/public/host.html
+@@ -220,6 +220,12 @@ header h1{font-size:16px;color:var(--orange);}
+     <!-- ?듭떖 踰꾪듉: ?ㅼ쓬 臾몄젣 (?꾩껜 ?덈퉬) -->
+     <button class="btn btn-n btn-w" id="btnN" onclick="hostNext()" disabled
+       style="font-size:16px;padding:15px;font-weight:900;margin-bottom:6px;">???ㅼ쓬 臾몄젣</button>
++    <!-- 怨⑤뱺踰??뚯엯 踰꾪듉: 15臾몄젣 釉붾줉 ?꾨즺 + 怨⑤뱺踰?誘몄쭊??+ ?앹〈??> 1 ???뚮쭔 ?쒖꽦 -->
++    <button class="btn btn-w" id="btnGB" onclick="hostGoldenBell()" disabled
++      style="background:#78350f;color:#fcd34d;font-size:14px;font-weight:900;padding:11px;
++             margin-bottom:6px;border:2px solid #f59e0b;letter-spacing:.5px;">
++      ?뵒 怨⑤뱺踰??뚯엯
++    </button>
+     <!-- 蹂댁“ 踰꾪듉 3??-->
+     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:5px;">
+       <button class="btn btn-s"   id="btnS"     onclick="hostStart()">?? ?쒖옉</button>
+@@ -342,13 +348,21 @@ const socket = io({ transports: ['websocket', 'polling'], reconnection: true, re
+ 
+ document.addEventListener('visibilitychange', () => { if (!document.hidden && socket.connected) socket.emit('request_state'); });
+ window.addEventListener('focus', () => { if (socket.connected) socket.emit('request_state'); });
+-socket.on('state_sync', data => { if (data) { updateStats(data); updateButtons(data.phase||currentPhase); } });
++socket.on('state_sync', data => {
++  if (!data) return;
++  if (data.questionIndex !== undefined) currentQuestionIndex = data.questionIndex;
++  if (data.survivorCount !== undefined) currentSurvivorCount = data.survivorCount;
++  updateStats(data); updateButtons(data.phase || currentPhase);
++  updateRoundIndicator(data);
++});
+ 
+ const players = new Map();
+-let currentPhase  = 'LOBBY';
+-let currentQ      = null;
+-let answersClosed = false;
+-let ansChart      = null;
++let currentPhase         = 'LOBBY';
++let currentQ             = null;
++let currentQuestionIndex = -1;
++let currentSurvivorCount = 0;
++let answersClosed        = false;
++let ansChart             = null;
+ const LABELS = ['??,'??,'??,'??];
+ 
+ // ?먥븧 Web Audio ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??@@ -423,24 +437,31 @@ socket.on('player_list', (list) => {
+ });
+ 
+ socket.on('state', data => {
+-  currentPhase  = data.phase;
+-  answersClosed = !!data.answersClosed;
++  currentPhase         = data.phase;
++  answersClosed        = !!data.answersClosed;
++  if (data.questionIndex !== undefined) currentQuestionIndex = data.questionIndex;
++  if (data.survivorCount !== undefined) currentSurvivorCount = data.survivorCount;
+   updateStats(data); updateButtons(data.phase);
+   document.getElementById('lockedBanner').style.display = (answersClosed && data.phase==='QUESTION') ? 'block' : 'none';
+   if (data.question) renderQuestion(data.question, data.phase==='REVEAL'?data.question.answer:undefined, data.question.correctAnswers);
+-  if (data.round && data.qInRound) {
+-    document.getElementById('roundIndicator').textContent = `?뱧 ${data.round}?뚯감 ??${data.qInRound}踰덉㎏ 臾몄젣`;
+-  }
++  updateRoundIndicator(data);
+ });
+ 
+ socket.on('game_started', ({ total }) => {
+-  toast(`???ㅽ뵾??怨⑤뱺踰??쒖옉! 珥?${total}臾몄젣 ??5珥????쒖옉?⑸땲??);
++  const regular = Math.min(total, 75);
++  const goldenBell = Math.max(0, total - 75);
++  const rounds = Math.ceil(regular / 15);
++  let msg = `???ㅽ뵾??怨⑤뱺踰??쒖옉! ${rounds}?뚯감 (媛?15臾몄젣)`;
++  if (goldenBell > 0) msg += ` + 怨⑤뱺踰?${goldenBell}臾몄젣`;
++  msg += ' ??5珥????쒖옉?⑸땲??;
++  toast(msg);
+   players.forEach(p => p.eliminated = false);
+   renderPlayers(); sfx('correct');
+ });
+ 
+ socket.on('question', q => {
+   currentQ = q; answersClosed = false;
++  currentQuestionIndex = q.index;
+   document.getElementById('chartCard').style.display  = 'none';
+   document.getElementById('lockedBanner').style.display = 'none';
+   document.getElementById('shortPanel').style.display = q.type==='short' ? 'block' : 'none';
+@@ -449,9 +470,7 @@ socket.on('question', q => {
+   document.getElementById('actC').textContent = '0';
+   document.getElementById('ansBar').style.width = '0%';
+   document.getElementById('ansNote').textContent = q.type==='short' ? '?⑤떟??吏꾪뻾 以?..' : '?듬? ?湲?;
+-  if (q.round && q.qInRound) {
+-    document.getElementById('roundIndicator').textContent = `?뱧 ${q.round}?뚯감 ??${q.qInRound}踰덉㎏ 臾몄젣`;
+-  }
++  updateRoundIndicator(q);
+   renderQuestion(q); updateButtons('QUESTION');
+ });
+ 
+@@ -552,6 +571,7 @@ socket.on('reveal', ({ correctAnswer, correctAnswers, stats, eliminated:elims, s
+     });
+   }
+ 
++  currentSurvivorCount = survivorCount;
+   updateStats({ survivorCount, eliminatedCount: parseInt(document.getElementById('sTotal').textContent||'0')-survivorCount });
+   updateButtons('REVEAL');
+   sfx(elims.length>0?'wrong':'correct');
+@@ -592,7 +612,9 @@ socket.on('reset', () => {
+   document.getElementById('chartCard').style.display='none';
+   document.getElementById('shortPanel').style.display='none';
+   document.getElementById('lockedBanner').style.display='none';
+-  document.getElementById('roundIndicator').textContent='?뱧 ??;
++  currentQuestionIndex = -1; currentSurvivorCount = 0;
++  const ri = document.getElementById('roundIndicator');
++  ri.textContent = '?뱧 ??; ri.style.color = 'var(--orange)';
+   document.getElementById('questionArea').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px;font-size:11px;">寃뚯엫???쒖옉?섏꽭??/div>';
+   renderPlayers(); updateButtons('LOBBY'); toast('?봽 珥덇린???꾨즺');
+ });
+@@ -600,7 +622,7 @@ socket.on('questions_reloaded', ({ main }) => toast(`?뱛 ${main}媛?臾몄젣 濡? 
+ // ?먥븧 ?뚮뜑留??먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
+ function updateStats(data) {
+-  if (data.survivorCount !== undefined)  document.getElementById('sSurv').textContent  = data.survivorCount;
++  if (data.survivorCount !== undefined) { currentSurvivorCount = data.survivorCount; document.getElementById('sSurv').textContent = data.survivorCount; }
+   if (data.eliminatedCount !== undefined) document.getElementById('sElim').textContent = data.eliminatedCount;
+   if (data.totalPlayers !== undefined)   document.getElementById('sTotal').textContent = data.totalPlayers;
+   if (data.questionIndex !== undefined) {
+@@ -626,8 +648,38 @@ function updateButtons(ph) {
+   B('btnN').disabled  = ph!=='LOBBY' && ph!=='REVEAL';
+   B('btnE').disabled  = ph==='LOBBY' || ph==='GAMEOVER';
+   B('btnPause').disabled = ph !== 'QUESTION' || answersClosed;
++
++  // 怨⑤뱺踰??뚯엯: REVEAL + 15臾몄젣 釉붾줉 ?꾨즺 + 怨⑤뱺踰?誘몄쭊??+ ?앹〈??> 1
++  const atRoundEnd   = ph === 'REVEAL' && ((currentQuestionIndex + 1) % 15 === 0);
++  const notInGB      = currentQuestionIndex < 75; // GOLDEN_BELL_START = 75
++  const needGoldenBell = atRoundEnd && notInGB && currentSurvivorCount > 1;
++  const gbBtn = B('btnGB');
++  if (gbBtn) {
++    gbBtn.disabled = !needGoldenBell;
++    gbBtn.style.background = needGoldenBell ? '#92400e' : '#78350f';
++    gbBtn.style.opacity    = needGoldenBell ? '1' : '0.35';
++  }
+ }
+ 
++function updateRoundIndicator(data) {
++  const el = document.getElementById('roundIndicator');
++  if (!el) return;
++  if (data.isGoldenBell) {
++    el.textContent = `?뵒 怨⑤뱺踰?${data.goldenBellNum}踰덉㎏ 臾몄젣`;
++    el.style.color = 'var(--gold)';
++  } else if (data.round && data.qInRound) {
++    el.textContent = `?뱧 ${data.round}?뚯감 ??${data.qInRound}踰덉㎏ 臾몄젣`;
++    el.style.color = 'var(--orange)';
++  }
++}
++
++function hostGoldenBell() {
++  if (!confirm('?뵒 怨⑤뱺踰?援ш컙(Q76~)?쇰줈 ?대룞?⑸땲??\n?꾩옱 ?앹〈?먭? 怨⑤뱺踰⑥뿉 ?꾩쟾?⑸땲?? 怨꾩냽?섏떆寃좎뒿?덇퉴?')) return;
++  socket.emit('host_goldenbell');
++}
++
++socket.on('goldenbell_error', msg => toast(`?좑툘 ${msg}`, 3000));
++
+ function renderQuestion(q, correctAns, correctAnswers) {
+   if (!q) return; currentQ = q;
+   const typeLabel = { choice:'媛앷???, ox:'O/X', short:'?⑤떟?? };
+@@ -690,7 +742,15 @@ function btnCooltime(id, ms = 1500) {
+   return true;
+ }
+ 
+-function hostStart()    { socket.emit('host_start'); }
++function hostStart() {
++  if (!btnCooltime('btnS', 2000)) return;
++  // 0紐낆씪 ???뺤씤
++  const playerCount = parseInt(document.getElementById('sTotal')?.textContent || '0', 10) || 0;
++  if (playerCount === 0) {
++    if (!confirm('?꾩옱 ?낆옣??李멸??먭? 0紐낆엯?덈떎. ?뺣쭚 ?쒖옉?섏떆寃좎뒿?덇퉴?')) return;
++  }
++  socket.emit('host_start');
++}
+ 
+ function hostNext()     {
+   if (!btnCooltime('btnN')) return;
+diff --git a/public/participant.html b/public/participant.html
+index ecff1e1..714a960 100644
+--- a/public/participant.html
++++ b/public/participant.html
+@@ -154,7 +154,7 @@
+       padding: 10px 14px;
+       flex-shrink: 0;
+     }
+-    .q-num { font-size: 12px; color: var(--t2); flex-shrink: 0; }
++    .q-num { font-size: 15px; color: var(--t2); flex-shrink: 0; }
+     .timer-bar-track { flex: 1; height: 7px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+     .timer-bar-fill { height: 100%; background: var(--orange); border-radius: 4px; width: 100%; }
+     .timer-bar-fill.amber { background: var(--gold); }
+@@ -448,8 +448,8 @@
+     <div class="elim-anim" id="elimAnim">??</div>
+     <div class="elim-title">?덈씫!</div>
+     <div class="elim-info-box" id="elimInfoBox" style="display:none">
+-      <div class="elim-info-row" id="elimServerStart"></div>
+       <div class="elim-info-row" id="elimQuestion"></div>
++      <div class="elim-info-row" id="elimTime" style="font-size:13px;color:var(--t2);margin-top:4px;"></div>
+     </div>
+     <div class="elim-notice">
+       ?꾩돺寃??덈씫?섏뀲?듬땲??<br>10遺??대궡濡??덈궡 ?곗뒪?ъ뿉 諛⑸Ц?섏뿬 ?곹뭹???섎졊??二쇱꽭??
+@@ -466,6 +466,11 @@
+     <div class="go-icon" id="goIcon">?뵒</div>
+     <div class="go-title golden" id="goTitle">寃뚯엫 醫낅즺!</div>
+     <div class="go-winners" id="goWinners"></div>
++    <!-- 蹂몄씤???덈씫??寃쎌슦 ???덈씫 ?뺣낫 ?쒖떆 -->
++    <div class="elim-info-box" id="goElimInfo" style="display:none;margin-top:18px;">
++      <div class="elim-info-row" id="goElimQuestion"></div>
++      <div class="elim-info-row" id="goElimTime" style="font-size:13px;color:var(--t2);margin-top:4px;"></div>
++    </div>
+     <div class="go-sub">?섍퀬?섏뀲?듬땲??</div>
+   </div>
+ 
+@@ -535,6 +540,14 @@
+     document.addEventListener('visibilitychange', () => { if (!document.hidden && socket.connected) socket.emit('request_state'); });
+     window.addEventListener('focus', () => { if (socket.connected) socket.emit('request_state'); });
+ 
++    function restoreElimDataIfAny() {
++      // ?ъ젒?????댁쟾??諛쏆븯???덈씫 ?뺣낫 蹂듭썝
++      try {
++        const saved = JSON.parse(localStorage.getItem('gb_elimData') || 'null');
++        if (saved) populateElimScreen(saved);
++      } catch {}
++    }
++
+     socket.on('session_restored', fs => {
+       myName = fs.name || myName;
+       myEliminated = !!fs.eliminated;
+@@ -545,13 +558,19 @@
+       localStorage.setItem('gb_name', myName);
+       localStorage.setItem('gb_inGame', 'true');
+       document.getElementById('waitName').textContent = `?덈뀞?섏꽭?? ${myName}?? ?몝`;
++      if (myEliminated) restoreElimDataIfAny();
+       applyFullState(fs);
+       showToast(`?뵕 ?ъ뿰寃곕맖 (${myName})`);
+     });
+ 
+     socket.on('state_sync', fs => {
+       if (!fs || !inGame) return;
+-      if (fs.name !== undefined) { myEliminated = !!fs.eliminated; answersClosed = !!fs.answersClosed; }
++      if (fs.name !== undefined) {
++        const wasElim = myEliminated;
++        myEliminated = !!fs.eliminated;
++        answersClosed = !!fs.answersClosed;
++        if (myEliminated && !wasElim) restoreElimDataIfAny();
++      }
+       applyFullState(fs);
+     });
+ 
+@@ -591,9 +610,14 @@
+           revealDone = false;
+           answersClosed = !!fs.answersClosed;
+ 
+-          const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
+-          const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
+-          document.getElementById('qNum').textContent = `${round}?뚯감 ${qInRound}踰?;
++          const qNumEl1 = document.getElementById('qNum');
++          if (fs.isGoldenBell) {
++            qNumEl1.textContent = `?뵒 怨⑤뱺踰?${fs.goldenBellNum}踰?; qNumEl1.style.color = '#fcd34d';
++          } else {
++            const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
++            const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
++            qNumEl1.textContent = `${round}?뚯감 ${qInRound}踰?; qNumEl1.style.color = '';
++          }
+           document.getElementById('qTextInner').textContent = fs.question.question;
+           document.getElementById('qTypeTag').textContent = typeLabel(fs.question.type);
+           document.getElementById('revealBox').style.display = 'none';
+@@ -607,7 +631,15 @@
+ 
+           if (answersClosed) {
+             renderChoices(fs.question, true);
+-            showLockedBox(myAnswerText || (myAnswer !== null ? `蹂닿린 ${myAnswer + 1}` : ''));
++            let _lockedPreview = myAnswerText || '';
++            if (!_lockedPreview && myAnswer !== null) {
++              if (currentType === 'ox') {
++                _lockedPreview = myAnswer === 0 ? 'O (留욌떎)' : 'X (?由щ떎)';
++              } else {
++                _lockedPreview = currentChoices[myAnswer] || `蹂닿린 ${myAnswer + 1}`;
++              }
++            }
++            showLockedBox(_lockedPreview);
+           } else {
+             renderChoices(fs.question);
+             if (fs.alreadyAnswered) showSubmittedBox(myAnswerText || '', true);
+@@ -626,9 +658,14 @@
+         if (fs.question) {
+           currentType = fs.question.type;
+           currentChoices = fs.question.choices || [];
+-          const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
+-          const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
+-          document.getElementById('qNum').textContent = `${round}?뚯감 ${qInRound}踰?;
++          const qNumEl2 = document.getElementById('qNum');
++          if (fs.isGoldenBell) {
++            qNumEl2.textContent = `?뵒 怨⑤뱺踰?${fs.goldenBellNum}踰?; qNumEl2.style.color = '#fcd34d';
++          } else {
++            const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
++            const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
++            qNumEl2.textContent = `${round}?뚯감 ${qInRound}踰?; qNumEl2.style.color = '';
++          }
+           document.getElementById('qTextInner').textContent = fs.question.question;
+           document.getElementById('qTypeTag').textContent = typeLabel(fs.question.type);
+           document.getElementById('submittedBox').style.display = 'none';
+@@ -684,8 +721,13 @@
+     socket.on('player_joined', ({ total }) => document.getElementById('waitCount').textContent = total);
+     socket.on('player_left', ({ total }) => document.getElementById('waitCount').textContent = total);
+     socket.on('game_started', () => {
++      // ??寃뚯엫 ?쒖옉 ???댁쟾 ?덈씫 ?곗씠???뺣━
++      localStorage.removeItem('gb_elimData');
++      myEliminated = false;
++      const elimBox = document.getElementById('elimInfoBox');
++      if (elimBox) elimBox.style.display = 'none';
+       if (!inGame) return;
+-      myEliminated = false; showScreen('sWait');
++      showScreen('sWait');
+     });
+ 
+     // ?먥븧 移댁슫?몃떎???먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
+@@ -705,16 +747,23 @@
+     });
+ 
+     // ?먥븧 臾몄젣 ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
+-    socket.on('question', ({ index, total, question, choices, type, timeLimit, round, qInRound }) => {
++    socket.on('question', ({ index, total, question, choices, type, timeLimit, round, qInRound, isGoldenBell, goldenBellNum }) => {
+       if (!inGame) return;
+       myAnswer = null; myAnswerText = null;
+       currentType = type; currentChoices = choices || [];
+       revealDone = false; answersClosed = false;
+       currentTimeLimit = timeLimit || 15;
+ 
+-      const rnd = round || (Math.floor(index / 15) + 1);
+-      const qnr = qInRound || ((index % 15) + 1);
+-      document.getElementById('qNum').textContent = `${rnd}?뚯감 ${qnr}踰?;
++      const qNumEl = document.getElementById('qNum');
++      if (isGoldenBell) {
++        qNumEl.textContent = `?뵒 怨⑤뱺踰?${goldenBellNum}踰?;
++        qNumEl.style.color = '#fcd34d';
++      } else {
++        const rnd = round || (Math.floor(index / 15) + 1);
++        const qnr = qInRound || ((index % 15) + 1);
++        qNumEl.textContent = `${rnd}?뚯감 ${qnr}踰?;
++        qNumEl.style.color = '';
++      }
+       document.getElementById('qTextInner').textContent = question;
+       document.getElementById('qTypeTag').textContent = typeLabel(type);
+       document.getElementById('qTimer').textContent = timeLimit;
+@@ -767,11 +816,11 @@
+         area.innerHTML = `<div class="ox-wrap">
+           <button class="ox-btn${locked ? ' locked' : ''}" onclick="selectAnswer(0)" id="ox0">
+             <div class="ox-sym">狩?/div>
+-            <div style="font-size:11px;color:var(--t2)">留욌떎 (O)</div>
++            <div style="font-size:14px;color:var(--t2)">留욌떎 (O)</div>
+           </button>
+           <button class="ox-btn${locked ? ' locked' : ''}" onclick="selectAnswer(1)" id="ox1">
+             <div class="ox-sym">??/div>
+-            <div style="font-size:11px;color:var(--t2)">?由щ떎 (X)</div>
++            <div style="font-size:14px;color:var(--t2)">?由щ떎 (X)</div>
+           </button>
+         </div>`;
+         if (myAnswer !== null) {
+@@ -783,13 +832,16 @@
+           <p class="short-hint">?뺥솗?섍쾶 ?낅젰?섏꽭??(蹂듭닔 ?뺣떟 媛??</p>
+           <input class="short-inp" id="shortInp" type="text" placeholder="???낅젰"
+             autocomplete="off" autocorrect="off" spellcheck="false"
+-            value="${myAnswerText || ''}" ${locked ? 'disabled' : ''}>
++            ${locked ? 'disabled' : ''}>
+           <button class="btn-gold btn-sm" id="shortBtn" onclick="submitText()"
+             ${locked ? 'disabled' : ''}>?쒖텧?섍린</button>
+         </div>`;
++        // value??DOM property濡??덉쟾?섍쾶 ?명똿 (XSS 諛⑹?: ?곗샂???ㅽ겕由쏀듃 ?몄젥??李⑤떒)
++        const _inp = document.getElementById('shortInp');
++        if (_inp && myAnswerText) _inp.value = myAnswerText;
+         if (!locked) {
+-          setTimeout(() => document.getElementById('shortInp')?.focus(), 120);
+-          document.getElementById('shortInp')?.addEventListener('keydown', e => { if (e.key === 'Enter') submitText(); });
++          setTimeout(() => _inp?.focus(), 120);
++          _inp?.addEventListener('keydown', e => { if (e.key === 'Enter') submitText(); });
+         }
+       } else {
+         area.innerHTML = `<div class="choices">${(q.choices || []).map((c, i) =>
+@@ -940,23 +992,57 @@
+       box.style.display = 'block';
+ 
+       if (type === 'short') {
+-        const given = (myAnswerText || '').toLowerCase().replace(/\s/g, '');
++        if (!myAnswerText) {
++          box.className = 'reveal-box rb-wrong';
++          box.innerHTML = `??誘몃떟 (?쒓컙 珥덇낵)<br><span style="font-size:14px">?뺣떟: ${(correctAnswers || []).join(' / ')}</span>`;
++          return;
++        }
++        const given = myAnswerText.toLowerCase().replace(/[\s\.,\!\?]/g, '');
+         const ok = (correctAnswers || []).some(a => {
+-          const n = a.toLowerCase().replace(/\s/g, '');
+-          return given.includes(n) || n.includes(given);
++          const n = a.toLowerCase().replace(/[\s\.,\!\?]/g, '');
++          return n && (given === n || given.includes(n) || n.includes(given));
+         });
+         box.className = `reveal-box ${ok ? 'rb-correct' : 'rb-wrong'}`;
+         box.innerHTML = `${ok ? '???뺣떟!' : '???ㅻ떟.'}<br><span style="font-size:14px">?뺣떟: ${(correctAnswers || []).join(' / ')}</span>`;
+         return;
+       }
+-      const isCorrect = myAnswer === correctAnswer;
+       const correctLabel = currentType === 'ox'
+         ? (correctAnswer === 0 ? 'O (留욌떎)' : 'X (?由щ떎)')
+         : (currentChoices[correctAnswer] || '');
++      if (myAnswer === null) {
++        box.className = 'reveal-box rb-wrong';
++        box.innerHTML = `??誘몃떟 (?쒓컙 珥덇낵)<br><span style="font-size:14px">?뺣떟: ${correctLabel}</span>`;
++        return;
++      }
++      const isCorrect = myAnswer === correctAnswer;
+       box.className = `reveal-box ${isCorrect ? 'rb-correct' : 'rb-wrong'}`;
+       box.textContent = isCorrect ? `???뺣떟! ${correctLabel}` : `???ㅻ떟. ?뺣떟: ${correctLabel}`;
+     }
+ 
++    // ?먥븧 ?덈씫 ?붾㈃ ?뺣낫 梨꾩슦湲?(eliminated ?대깽??+ ?ъ젒??蹂듭썝?먯꽌 怨듭슜 ?ъ슜) ?먥븧
++    function populateElimScreen(data) {
++      if (!data) return;
++      const reasonTxt = data.reason === 'timeout'    ? ' (???쒓컙 珥덇낵)'
++                      : data.reason === 'disconnect' ? ' (?벘 ?듬? ???딄?)'
++                      : data.reason === 'wrong'      ? ''
++                      : '';
++      const qLabel = data.isGoldenBell
++        ? `怨⑤뱺踰?${data.goldenBellNum}踰?臾몄젣`
++        : `??${data.eliminatedAtQuestion}踰?臾몄젣`;
++      document.getElementById('elimInfoBox').style.display = 'flex';
++      document.getElementById('elimQuestion').textContent =
++        `${qLabel}?먯꽌 ?덈씫?섏뀲?듬땲??${reasonTxt}`;
++      // ?덈씫 ?쒓컖 ?쒖떆
++      const elimTimeEl = document.getElementById('elimTime');
++      if (elimTimeEl && data.serverEliminatedTime) {
++        const t = new Date(data.serverEliminatedTime);
++        const pad = n => String(n).padStart(2, '0');
++        elimTimeEl.textContent = `?븧 ?덈씫 ?쒓컖: ${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
++      } else if (elimTimeEl) {
++        elimTimeEl.textContent = '';
++      }
++    }
++
+     // ?먥븧 ?덈씫 / 醫낅즺 ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧??     socket.on('eliminated', (data) => {
+       myEliminated = true;
+@@ -964,23 +1050,16 @@
+       el.style.animation = 'none';
+       requestAnimationFrame(() => { el.style.animation = ''; });
+ 
+-      if (data && data.serverStartTime) {
+-        const fmt = iso => new Date(iso).toLocaleString('ko-KR', {
+-          year:'numeric', month:'2-digit', day:'2-digit',
+-          hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false
+-        });
+-        document.getElementById('elimInfoBox').style.display = 'flex';
+-        document.getElementById('elimServerStart').textContent =
+-          `?쒕쾭 ?쒖옉 ?쒓컙: ${fmt(data.serverStartTime)}`;
+-        const reasonTxt = data.reason === 'timeout' ? ' (???쒓컙 珥덇낵)' : '';
+-        document.getElementById('elimQuestion').textContent =
+-          `??${data.eliminatedAtQuestion}踰?臾몄젣?먯꽌 ?덈씫?섏뀲?듬땲??${reasonTxt}`;
++      if (data) {
++        try { localStorage.setItem('gb_elimData', JSON.stringify(data)); } catch {}
++        populateElimScreen(data);
+       }
+       showScreen('sEliminated');
+     });
+ 
+     socket.on('game_over', ({ winners, allEliminated }) => {
+       inGame = false; localStorage.removeItem('gb_inGame');
++      const isWinner = !allEliminated && winners && winners.includes(myName);
+       if (allEliminated) {
+         document.getElementById('goIcon').textContent = '??';
+         document.getElementById('goTitle').textContent = '?꾩썝 ?덈씫!';
+@@ -988,12 +1067,42 @@
+         document.getElementById('goWinners').textContent = '?꾩돺寃?紐⑤몢 ?덈씫?섏뀲?듬땲??';
+         document.getElementById('goWinners').className = 'go-winners all-elim';
+       } else {
+-        document.getElementById('goIcon').textContent = '?뵒';
+-        document.getElementById('goTitle').textContent = '怨⑤뱺踰?';
++        document.getElementById('goIcon').textContent = isWinner ? '?룇' : '?뵒';
++        document.getElementById('goTitle').textContent = isWinner ? '?럦 ?곗듅!' : '怨⑤뱺踰?';
+         document.getElementById('goTitle').className = 'go-title golden';
+         document.getElementById('goWinners').textContent = winners.length > 0 ? `?룆 ${winners.join(', ')}` : '';
+         document.getElementById('goWinners').className = 'go-winners';
+       }
++      // 蹂몄씤???덈씫?먮씪硫??덈씫 ?뺣낫 ?쒖떆 (?꾩썝 ?덈씫 / ?곗듅????紐⑤몢)
++      const goBox = document.getElementById('goElimInfo');
++      if (goBox) {
++        if (myEliminated || allEliminated) {
++          try {
++            const saved = JSON.parse(localStorage.getItem('gb_elimData') || 'null');
++            if (saved) {
++              const reasonTxt = saved.reason === 'timeout'    ? ' (???쒓컙 珥덇낵)'
++                              : saved.reason === 'disconnect' ? ' (?벘 ?듬? ???딄?)'
++                              : saved.reason === 'wrong'      ? ''
++                              : '';
++              const qLabel = saved.isGoldenBell
++                ? `怨⑤뱺踰?${saved.goldenBellNum}踰?臾몄젣`
++                : `??${saved.eliminatedAtQuestion}踰?臾몄젣`;
++              document.getElementById('goElimQuestion').textContent = `${qLabel}?먯꽌 ?덈씫${reasonTxt}`;
++              if (saved.serverEliminatedTime) {
++                const t = new Date(saved.serverEliminatedTime);
++                const pad = n => String(n).padStart(2, '0');
++                document.getElementById('goElimTime').textContent =
++                  `?븧 ?덈씫 ?쒓컖: ${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
++              }
++              goBox.style.display = 'flex';
++            } else {
++              goBox.style.display = 'none';
++            }
++          } catch { goBox.style.display = 'none'; }
++        } else {
++          goBox.style.display = 'none';
++        }
++      }
+       showScreen('sGameover');
+     });
+ 
+@@ -1005,7 +1114,9 @@
+     socket.on('reset', () => {
+       myName = ''; myAnswer = null; myAnswerText = null; myEliminated = false; inGame = false;
+       answersClosed = false; revealDone = false;
+-      localStorage.removeItem('gb_inGame'); localStorage.removeItem('gb_name');
++      localStorage.removeItem('gb_inGame');
++      localStorage.removeItem('gb_name');
++      localStorage.removeItem('gb_elimData');
+       document.getElementById('nameInput').value = '';
+       document.getElementById('errMsg').textContent = '';
+       document.getElementById('elimInfoBox').style.display = 'none';
+diff --git a/server.js b/server.js
+index 56712ed..c13b066 100644
+--- a/server.js
++++ b/server.js
+@@ -12,6 +12,7 @@ const os      = require('os');
+ const SERVER_START_TIME = new Date().toISOString();
+ const QUESTION_TIME     = 15;   // ??臾몄젣 15珥?怨좎젙
+ const REVEAL_DELAY      = 3000; // ms: ?듬? 留덇컧 ???뺣떟 怨듦컻源뚯? 移댁슫?몃떎??+const GOLDEN_BELL_START = 75;   // 0-indexed: Q76 = index 75遺??怨⑤뱺踰?援ш컙
+ 
+ const app    = express();
+ const server = http.createServer(app);
+@@ -52,14 +53,24 @@ function parseRow(row, i) {
+     row['蹂닿린4'] || row['D'] || '',
+   ].filter(Boolean);
+ 
+-  let type = rawType;
++  // ?쒓? ?좏삎 留ㅽ븨
++  const TYPE_MAP = {
++    '媛앷???: 'choice', '?좏깮??: 'choice',
++    '?ㅼ뿊??: 'ox', 'ox': 'ox', 'o/x': 'ox', 'o x': 'ox',
++    '?⑤떟??: 'short', '二쇨???: 'short', '?쒖닠??: 'short',
++    'essay': 'short',
++    'comeback': 'comeback', '?⑥옄遺??: 'comeback',  // ?꾩냽 ?꾪꽣?먯꽌 ?쒖쇅??+  };
++  let type = TYPE_MAP[rawType] || rawType;
+   if (!type) {
+     if (choices.length === 2 && choices[0].toUpperCase() === 'O' && choices[1].toUpperCase() === 'X') type = 'ox';
+     else if (choices.length === 0) type = 'short';
+     else type = 'choice';
+   }
+-  // essay ??낆? short濡?媛뺤젣 ?꾪솚
+-  if (type === 'essay') type = 'short';
++  if (!['choice', 'ox', 'short', 'comeback'].includes(type)) {
++    log(`Q${i + 1} ?????녿뒗 ?좏삎 "${rawType}" ??choice 泥섎━`, 'WARN');
++    type = 'choice';
++  }
+ 
+   const q = {
+     id:        i + 1,
+@@ -71,11 +82,35 @@ function parseRow(row, i) {
+     correctAnswers: null,
+   };
+ 
++  if (type === 'comeback') {
++    // ?꾩냽 ?꾪꽣?먯꽌 ?쒖쇅?섎?濡??뺣떟 ?뚯떛 ?ㅽ궢
++    return q;
++  }
+   if (type === 'short') {
+     const raw = String(row['?뺣떟'] || row['answer'] || '');
+     q.correctAnswers = raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
++    if (!q.correctAnswers.length) {
++      log(`Q${i + 1} (?⑤떟?? ?뺣떟??鍮꾩뼱?덉쓬 ????臾몄젣??紐⑤뱺 ?듭씠 ?ㅻ떟 泥섎━??, 'WARN');
++    }
+   } else {
+-    q.answer = parseInt(row['?뺣떟'] || row['answer'] || 1) - 1;
++    // OX ?뺣떟??"O"/"X" ?띿뒪?몃줈 ?ㅼ뼱??寃쎌슦 泥섎━
++    const rawAns = row['?뺣떟'] != null ? String(row['?뺣떟']).trim() : '';
++    let parsed;
++    if (type === 'ox' && /^[oxOX]$/i.test(rawAns)) {
++      parsed = rawAns.toUpperCase() === 'O' ? 1 : 2; // 1-indexed (O=1, X=2)
++    } else {
++      parsed = parseInt(rawAns || row['answer'] || 1);
++    }
++    if (!Number.isFinite(parsed)) {
++      log(`Q${i + 1} ?뺣떟 ?뚯떛 ?ㅽ뙣 ("${rawAns}") ??1踰덉쑝濡?fallback`, 'WARN');
++      parsed = 1;
++    }
++    q.answer = parsed - 1;
++    // ?몃뜳??踰붿쐞 寃利?+    if (q.answer < 0 || q.answer >= choices.length) {
++      log(`Q${i + 1} ?뺣떟 ?몃뜳??${q.answer + 1}媛 蹂닿린 踰붿쐞(1~${choices.length})瑜?踰쀬뼱????1踰덉쑝濡??대옩??, 'WARN');
++      q.answer = 0;
++    }
+   }
+ 
+   return q;
+@@ -198,9 +233,20 @@ function roundInfo(idx) {
+   return { round: Math.floor(idx / 15) + 1, qInRound: (idx % 15) + 1 };
+ }
+ 
++// 怨⑤뱺踰??ы븿 臾몄젣 硫뷀? 諛섑솚 (round/qInRound ?먮뒗 goldenBellNum)
++function questionMeta(idx) {
++  if (idx >= GOLDEN_BELL_START) {
++    return { isGoldenBell: true, goldenBellNum: idx - GOLDEN_BELL_START + 1, round: null, qInRound: null };
++  }
++  const { round, qInRound } = roundInfo(idx);
++  return { isGoldenBell: false, goldenBellNum: null, round, qInRound };
++}
++
++const MAX_GAME_LOG = 500;
+ function addGameLog(msg) {
+   const entry = { ts: new Date().toISOString(), msg };
+   state.gameLog.push(entry);
++  if (state.gameLog.length > MAX_GAME_LOG) state.gameLog.splice(0, state.gameLog.length - MAX_GAME_LOG);
+   io.emit('game_log', entry);
+   log(`[EVENT] ${msg}`);
+ }
+@@ -219,7 +265,7 @@ function getTextAnswers() {
+ function buildStateFor(sid) {
+   const p = state.players.get(sid); if (!p) return null;
+   const q = cq();
+-  const { round, qInRound } = state.questionIndex >= 0 ? roundInfo(state.questionIndex) : { round: 0, qInRound: 0 };
++  const meta = state.questionIndex >= 0 ? questionMeta(state.questionIndex) : { isGoldenBell: false, goldenBellNum: null, round: null, qInRound: null };
+   return {
+     phase:          state.phase,
+     questionIndex:  state.questionIndex,
+@@ -235,7 +281,7 @@ function buildStateFor(sid) {
+     alreadyAnswered: p.answer !== null || p.answerText !== null,
+     myAnswer:       p.answer,
+     myAnswerText:   p.answerText,
+-    round, qInRound,
++    ...meta,
+     question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
+       id: q.id, question: q.question, choices: q.choices,
+       timeLimit: q.timeLimit, type: q.type,
+@@ -251,7 +297,7 @@ function buildStateFor(sid) {
+ function buildGenericState() {
+   const q    = cq();
+   const surv = survivors().length;
+-  const { round, qInRound } = state.questionIndex >= 0 ? roundInfo(state.questionIndex) : { round: 0, qInRound: 0 };
++  const meta = state.questionIndex >= 0 ? questionMeta(state.questionIndex) : { isGoldenBell: false, goldenBellNum: null, round: null, qInRound: null };
+   return {
+     phase:          state.phase,
+     questionIndex:  state.questionIndex,
+@@ -262,7 +308,7 @@ function buildGenericState() {
+     timeLeft:       state.timeLeft,
+     timeLimit:      state.currentTimeLimit,
+     answersClosed:  state.answersClosed,
+-    round, qInRound,
++    ...meta,
+     question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
+       id: q.id, question: q.question, choices: q.choices,
+       timeLimit: q.timeLimit, type: q.type,
+@@ -464,7 +510,12 @@ io.on('connection', socket => {
+         state.ghostPlayers.delete(uid); socket.emit('session_expired'); return;
+       }
+       state.ghostPlayers.delete(uid);
+-      state.players.set(socket.id, { ...ghost, answer: null, answerText: null, answeredAt: null });
++      // 媛숈? 臾몄젣 ???ъ젒?띿씠硫??듬? 蹂댁〈, 洹??몄뿉???대━??+      const sameQ = ghost.answeredAtIndex === state.questionIndex && state.phase === 'QUESTION';
++      const restored = sameQ
++        ? { ...ghost }
++        : { ...ghost, answer: null, answerText: null, answeredAt: null, answeredAtIndex: null };
++      state.players.set(socket.id, restored);
+       socket.join('players');
+       socket.emit('session_restored', buildStateFor(socket.id));
+       io.emit('player_joined', { name: ghost.name, total: state.players.size, survivors: survivors().length });
+@@ -475,7 +526,11 @@ io.on('connection', socket => {
+     for (const [sid, p] of state.players) {
+       if (p.uid === uid) {
+         state.players.delete(sid);
+-        state.players.set(socket.id, { ...p, answer: null, answerText: null, answeredAt: null });
++        // 媛숈? 臾몄젣 ???ㅻⅨ ???뚯폆?대㈃ ?듬? 蹂댁〈
++        const sameQ = p.answeredAtIndex === state.questionIndex && state.phase === 'QUESTION';
++        state.players.set(socket.id, sameQ
++          ? { ...p }
++          : { ...p, answer: null, answerText: null, answeredAt: null, answeredAtIndex: null });
+         socket.join('players');
+         socket.emit('session_restored', buildStateFor(socket.id));
+         log(`Session switched: ${p.name}`);
+@@ -516,9 +571,13 @@ io.on('connection', socket => {
+     for (const p of state.players.values()) {
+       if (p.name === trimmed) { socket.emit('join_error', '?대? ?ъ슜 以묒씤 ?대쫫?낅땲??'); return; }
+     }
+-    state.players.set(socket.id, { name: trimmed, uid, eliminated: false, answer: null, answerText: null, answeredAt: null });
++    // uid媛 ?녾굅??鍮?臾몄옄?댁씠硫??쒕쾭?먯꽌 ?앹꽦 (ghost key 異⑸룎 諛⑹?)
++    const safeUid = (typeof uid === 'string' && uid.length > 0)
++      ? uid
++      : `srv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
++    state.players.set(socket.id, { name: trimmed, uid: safeUid, eliminated: false, answer: null, answerText: null, answeredAt: null });
+     socket.join('players');
+-    socket.emit('joined', { name: trimmed });
++    socket.emit('joined', { name: trimmed, uid: safeUid });
+     io.emit('player_joined', { name: trimmed, total: state.players.size, survivors: state.players.size });
+     addGameLog(`Join: ${trimmed} (total: ${state.players.size})`);
+     saveSession();
+@@ -539,14 +598,14 @@ io.on('connection', socket => {
+       if (!raw) return;
+       const safe = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 200);
+       const isFirst = p.answerText === null;
+-      p.answerText = safe; p.answeredAt = now;
++      p.answerText = safe; p.answeredAt = now; p.answeredAtIndex = state.questionIndex;
+       socket.emit('answer_ok', { text: safe, changed: !isFirst });
+       io.emit('text_answer_in', { sid: socket.id, name: p.name, text: safe });
+     } else {
+       if (typeof choice !== 'number') return;
+       if (p.answer === choice && p.answeredAt && now - p.answeredAt < 1500) return;
+       const isFirst = p.answer === null;
+-      p.answer = choice; p.answeredAt = now;
++      p.answer = choice; p.answeredAt = now; p.answeredAtIndex = state.questionIndex;
+       socket.emit('answer_ok', { choice, changed: !isFirst });
+     }
+ 
+@@ -573,8 +632,12 @@ io.on('connection', socket => {
+     if (!isAdmin(socket)) return;
+     const mainQ = loadQuestions();
+     state.mainQuestions = mainQ;
+-    // pendingStartIndex媛 ?ㅼ젙???덉쑝硫?洹?臾몄젣遺???쒖옉
+-    const pending = state.pendingStartIndex;
++    // pendingStartIndex媛 ?ㅼ젙???덉쑝硫?洹?臾몄젣遺???쒖옉 (?ㅼ젣 臾몄젣 ?섎줈 ?대옩??
++    const rawPending = state.pendingStartIndex;
++    const pending = rawPending > 0 ? Math.min(rawPending, mainQ.length) : 0;
++    if (rawPending > mainQ.length && rawPending > 0) {
++      log(`pendingStartIndex(${rawPending}) > 臾몄젣 ??${mainQ.length}), Q${mainQ.length}濡??대옩??, 'WARN');
++    }
+     state.questionIndex = pending > 1 ? pending - 2 : -1;
+     state.pendingStartIndex = 0;
+     state.phase = 'LOBBY';
+@@ -602,6 +665,35 @@ io.on('connection', socket => {
+ 
+   socket.on('host_end', () => { if (!isAdmin(socket)) return; _endGame(); });
+ 
++  // ?? Host: 怨⑤뱺踰??뚯엯 ??????????????????????????????????????
++  // 議곌굔: REVEAL ?곹깭 + 15臾몄젣 釉붾줉 ?꾨즺 + ?꾩쭅 怨⑤뱺踰?誘몄쭊??+ Q76 ?댄썑 臾몄젣 議댁옱
++  socket.on('host_goldenbell', () => {
++    if (!isAdmin(socket)) return;
++    if (state.phase !== 'REVEAL') return;
++    if (((state.questionIndex + 1) % 15) !== 0) {
++      socket.emit('goldenbell_error', '15臾몄젣 ?⑥쐞濡??꾨즺???꾩뿉留?怨⑤뱺踰⑥뿉 吏꾩엯?????덉뒿?덈떎.');
++      return;
++    }
++    if (state.questionIndex >= GOLDEN_BELL_START) {
++      socket.emit('goldenbell_error', '?대? 怨⑤뱺踰?援ш컙?낅땲??');
++      return;
++    }
++    if (state.mainQuestions.length <= GOLDEN_BELL_START) {
++      socket.emit('goldenbell_error', `怨⑤뱺踰?臾몄젣(Q${GOLDEN_BELL_START + 1} ?댄썑)媛 ?놁뒿?덈떎.`);
++      return;
++    }
++    // ?쒕쾭痢??앹〈??寃利?(?대씪?댁뼵???고쉶 李⑤떒)
++    const survCount = survivors().length;
++    if (survCount < 2) {
++      socket.emit('goldenbell_error', `?앹〈??${survCount}紐???怨⑤뱺踰⑥? 2紐??댁긽???뚮쭔 媛?ν빀?덈떎.`);
++      return;
++    }
++    // questionIndex瑜?GOLDEN_BELL_START-1 濡??ㅼ젙 ??_doNextQuestion()??GOLDEN_BELL_START濡??щ┝
++    state.questionIndex = GOLDEN_BELL_START - 1;
++    addGameLog(`?뵒 怨⑤뱺踰??뚯엯! (Q${GOLDEN_BELL_START + 1}遺???쒖옉, ?앹〈 ${survCount}紐?`);
++    _doNextQuestion();
++  });
++
+   // ?? Host: Timer pause / resume ?????????????????????????
+   socket.on('host_pause_timer', () => {
+     if (!isAdmin(socket)) return;
+@@ -662,6 +754,8 @@ io.on('connection', socket => {
+   // ?? Host: 臾몄젣 吏??(濡쒕퉬: ?쒖옉 臾몄젣 ?덉빟 / 吏꾪뻾以? ?ㅼ쓬 臾몄젣 ?먰봽) ??
+   socket.on('host_jump_question', ({ targetQ }) => {
+     if (!isAdmin(socket)) return;
++    // LOBBY ?쒖젏?먮뒗 mainQuestions媛 鍮꾩뼱?덉쓣 ???덉쓬 ??75 湲곕낯媛??ъ슜
++    // ?ㅼ젣 ?대옩?묒? host_start?먯꽌 mainQ.length 湲곗??쇰줈 ?섑뻾??     const max = state.mainQuestions.length || 75;
+     const n   = Math.max(1, Math.min(Math.round(targetQ), max));
+ 
+@@ -683,10 +777,51 @@ io.on('connection', socket => {
+   socket.on('disconnect', () => {
+     const p = state.players.get(socket.id);
+     if (p) {
+-      state.ghostPlayers.set(p.uid, { ...p, disconnectedAt: Date.now() });
++      // ??? QUESTION ?④퀎 disconnect ??利됱떆 ?뺣떟 寃利????덈씫 ?먯젙 (?덈씫 ?뚰뵾 諛⑹?) ???
++      if (state.phase === 'QUESTION' && !p.eliminated) {
++        const q = cq();
++        if (q) {
++          let hasAnswered = false, isCorrect = false;
++          if (q.type === 'short') {
++            hasAnswered = typeof p.answerText === 'string' && p.answerText.length > 0;
++            if (hasAnswered) {
++              const normalize = s => s.toLowerCase().replace(/[\s\.,\!\?]/g, '');
++              const given = normalize(p.answerText);
++              isCorrect = (q.correctAnswers || []).some(a => {
++                const norm = normalize(a);
++                return norm && (given === norm || given.includes(norm) || norm.includes(given));
++              });
++            }
++          } else {
++            hasAnswered = p.answer !== null && p.answer !== undefined && Number.isFinite(p.answer);
++            if (hasAnswered) isCorrect = p.answer === q.answer;
++          }
++          if (!hasAnswered) {
++            p.eliminated = true;
++            p.eliminatedAtQuestion = state.questionIndex + 1;
++            p.eliminatedReason = 'disconnect';
++            addGameLog(`?? ${p.name} ?듬? ???딄? ???덈씫`);
++          } else if (!isCorrect) {
++            p.eliminated = true;
++            p.eliminatedAtQuestion = state.questionIndex + 1;
++            p.eliminatedReason = 'wrong';
++            addGameLog(`?? ${p.name} ?ㅻ떟 ???딄? ???덈씫`);
++          }
++          // ?뺣떟 ???딄? ???댁븘?덉쓬 ?좎? (?ъ젒????洹몃?濡?alive)
++        }
++      }
++
++      // uid ?덉쟾?μ튂 (?놁쑝硫?利됱꽍 ?앹꽦 ??異⑸룎 諛⑹?)
++      const ghostKey = (typeof p.uid === 'string' && p.uid.length > 0)
++        ? p.uid
++        : `srv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
++      state.ghostPlayers.set(ghostKey, { ...p, uid: ghostKey, disconnectedAt: Date.now() });
+       state.players.delete(socket.id);
+       io.emit('player_left', { name: p.name, total: state.players.size });
+-      log(`Disconnected (ghost saved): ${p.name}`);
++      const tag = p.eliminatedReason === 'disconnect' ? ' (誘몃떟 ?덈씫)'
++                : p.eliminatedReason === 'wrong'      ? ' (?ㅻ떟 ?덈씫)'
++                : ' (ghost ???';
++      log(`Disconnected: ${p.name}${tag}`);
+       saveSession();
+     }
+   });
+@@ -697,23 +832,30 @@ io.on('connection', socket => {
+ // ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
+ function _doNextQuestion() {
+   if (state.phase !== 'LOBBY' && state.phase !== 'REVEAL') return;
++  if (!state.mainQuestions.length) {
++    log('_doNextQuestion: mainQuestions empty, ignoring', 'WARN');
++    return;
++  }
+   state.questionIndex++;
+   if (state.questionIndex >= state.mainQuestions.length) { _endGame(); return; }
+ 
+-  for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; }
++  for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; p.answeredAtIndex = null; }
+   state.phase = 'QUESTION'; state.answersClosed = false;
+ 
+   const q = state.mainQuestions[state.questionIndex];
+-  const { round, qInRound } = roundInfo(state.questionIndex);
++  const meta = questionMeta(state.questionIndex);
++  const logLabel = meta.isGoldenBell
++    ? `[怨⑤뱺踰?${meta.goldenBellNum}踰?`
++    : `[${meta.round}?뚯감-${meta.qInRound}踰?`;
+ 
+   io.emit('question', {
+     index: state.questionIndex, total: state.mainQuestions.length,
+     question: q.question, choices: q.choices, type: q.type,
+-    timeLimit: QUESTION_TIME, round, qInRound,
++    timeLimit: QUESTION_TIME, ...meta,
+   });
+   startTimer(QUESTION_TIME, () => _onTimeUp(q));
+   broadcastState();
+-  addGameLog(`[${round}?뚯감-${qInRound}踰? Q${state.questionIndex + 1}: ${q.question}`);
++  addGameLog(`${logLabel} Q${state.questionIndex + 1}: ${q.question}`);
+   saveSession();
+ }
+ 
+@@ -748,6 +890,10 @@ function _doReveal() {
+     : [];
+   let eliminatedNoAnswer = 0; // 誘몃떟?쇰줈 ?덈씫???몄썝?? 
++  // sid ??씤?깆뒪 (O(n짼) ??O(n))
++  const sidByPlayer = new Map();
++  for (const [sid, pl] of state.players) sidByPlayer.set(pl, sid);
++
+   for (const p of pool) {
+     let ok = false;
+     let reason = 'wrong';
+@@ -765,13 +911,13 @@ function _doReveal() {
+         });
+       }
+     } else {
+-      if (p.answer === null || p.answer === undefined) {
++      if (p.answer === null || p.answer === undefined || !Number.isFinite(p.answer)) {
+         ok = false; reason = 'timeout';
+       } else {
+         ok = p.answer === q.answer;
+       }
+     }
+-    const sid = [...state.players.entries()].find(([, pl]) => pl === p)?.[0];
++    const sid = sidByPlayer.get(p);
+     if (ok) {
+       correct.push(p.name);
+     } else {
+@@ -809,12 +955,15 @@ function _doReveal() {
+     survivors: correct, survivorCount: correct.length });
+ 
+   // 媛??덈씫?먯뿉寃??쒕쾭 ?쒓컙 + ?ъ쑀 ?꾩넚
++  const elimMeta = questionMeta(state.questionIndex);
+   for (const { sid, reason } of newElim) {
+     if (sid) io.to(sid).emit('eliminated', {
+       eliminatedAtQuestion: state.questionIndex + 1,
++      isGoldenBell:  elimMeta.isGoldenBell,
++      goldenBellNum: elimMeta.goldenBellNum,
+       serverStartTime:      SERVER_START_TIME,
+       serverEliminatedTime: new Date().toISOString(),
+-      reason, // 'timeout' or 'wrong'
++      reason,
+     });
+   }
+ 
+@@ -825,6 +974,15 @@ function _doReveal() {
+     addGameLog(`?덈씫: ${names}`);
+   }
+   broadcastState(); saveSession();
++
++  // ?먮룞 醫낅즺 議곌굔:
++  // (a) ?꾩썝 ?덈씫 ??利됱떆 GAMEOVER
++  // (b) 怨⑤뱺踰?援ш컙?먯꽌 ?앹〈??1紐??댄븯 ??利됱떆 GAMEOVER (?곗듅 ?먮뒗 ?꾩썝 ?덈씫)
++  if (correct.length === 0) {
++    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
++  } else if (state.questionIndex >= GOLDEN_BELL_START && correct.length === 1) {
++    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
++  }
+ }
+ 
+ function _endGame() {
+diff --git a/start.bat b/start.bat
+index a4cbdff..2d9d2d4 100644
+--- a/start.bat
++++ b/start.bat
+@@ -1,6 +1,5 @@
+ @echo off
+-title Speed Golden Bell Server v5.0
+-chcp 65001 >nul
++title Golden Bell Quiz Server v4.0
+ 
+ cd /d "%~dp0"
+ set "DIR=%~dp0"
+@@ -8,7 +7,7 @@ set "PORT=3000"
+ set "LOG_FILE=%DIR%cloudflare.log"
+ 
+ echo =====================================================
+-echo    Speed Golden Bell Quiz Server (v5.0)
++echo    Golden Bell Quiz Server System (v4.0)
+ echo =====================================================
+ echo.
+ 
+@@ -16,40 +15,15 @@ where node >nul 2>&1
+ if errorlevel 1 ( echo [ERROR] Node.js is not installed. & pause & exit /b )
+ if not exist "node_modules" ( call npm install >nul 2>&1 )
+ 
+-:: 湲곗〈 cloudflared ?꾨줈?몄뒪 醫낅즺
+ taskkill /f /im cloudflared.exe >nul 2>&1
+-
+-:: ?덉쟾/?붾㈃爰쇱쭚 諛⑹?
+ start /min "SleepPreventer" powershell -WindowStyle Hidden -NoProfile -Command "Add-Type -Namespace Win32 -Name Power -MemberDefinition '[DllImport(""kernel32.dll"")] public static extern uint SetThreadExecutionState(uint esFlags);'; while($true){ [Win32.Power]::SetThreadExecutionState(0x80000003); Start-Sleep -Seconds 30 }"
+ 
+ set "CF_EXE=cloudflared"
+ if exist "%DIR%cloudflared.exe" set "CF_EXE=%DIR%cloudflared.exe"
+ if exist "%LOG_FILE%" del /f /q "%LOG_FILE%"
++start "CloudflareTunnel" /min cmd /c ""%CF_EXE%" tunnel --url http://localhost:%PORT% > "%LOG_FILE%" 2>&1"
+ 
+-:: ?? Cloudflared WATCHDOG (PowerShell loop) ???????????????
+-:: quic timeout(10遺??쇰줈 tunnel 二쎌쑝硫??먮룞 ?ъ떆?? 濡쒓렇??append.
+-:: ?ъ떆??????URL 諛쒓툒?섎㈃ server.js??watchCfLog 媛 媛먯??댁꽌
+-:: host.html 濡?cf_url ?대깽???먮룞 ?꾩넚 ??QR ?먮룞 媛깆떊
+-start /min "CloudflareWatchdog" powershell -WindowStyle Hidden -NoProfile -Command ^
+-  "$log='%LOG_FILE%'; $cf='%CF_EXE%'; $port='%PORT%'; ^
+-   while($true){ ^
+-     Add-Content -Path $log -Value ('[WATCHDOG ' + (Get-Date -Format 'HH:mm:ss') + '] Launching cloudflared'); ^
+-     $p = Start-Process -FilePath $cf -ArgumentList @('tunnel','--url',('http://localhost:'+$port)) -RedirectStandardOutput ($log+'.out') -RedirectStandardError ($log+'.err') -NoNewWindow -PassThru; ^
+-     $p.WaitForExit(); ^
+-     Get-Content ($log+'.out') -ErrorAction SilentlyContinue | Add-Content -Path $log; ^
+-     Get-Content ($log+'.err') -ErrorAction SilentlyContinue | Add-Content -Path $log; ^
+-     Remove-Item ($log+'.out'),($log+'.err') -ErrorAction SilentlyContinue; ^
+-     Add-Content -Path $log -Value ('[WATCHDOG ' + (Get-Date -Format 'HH:mm:ss') + '] cloudflared exited code=' + $p.ExitCode + ', restart in 3s'); ^
+-     Start-Sleep -Seconds 3 ^
+-   }"
+-
+-:: URL 湲곕떎?몃떎媛 怨듦컻 留곹겕 異쒕젰
+-powershell -Command "$log='%LOG_FILE%'; $url=''; for($i=0; $i -lt 20; $i++){ if(Test-Path $log){ $match = Select-String -Path $log -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'; if($match){ $url = $match.Matches[0].Value; break } }; Start-Sleep -Seconds 1 }; echo ''; echo '====================================================='; echo '    [SUCCESS] CLOUDFLARE PUBLIC LINKS'; echo '====================================================='; if($url){ echo ' Share these links with people outside your network:'; echo ''; echo \"   - PARTICIPANT:  $url/participant.html\"; echo \"   - DISPLAY:      $url/display.html\"; echo \"   - HOST (Admin): $url/host.html\"; echo ''; echo ' [INFO] Tunnel auto-restarts on QUIC timeout.' } else { echo ' [ERROR] Public URL not found.' }; echo '====================================================='; echo '';"
++powershell -Command "$log='%LOG_FILE%'; $url=''; for($i=0; $i -lt 20; $i++){ if(Test-Path $log){ $match = Select-String -Path $log -Pattern 'https://[a-zA-Z0-9-]+\.trycloudflare\.com'; if($match){ $url = $match.Matches[0].Value; break } }; Start-Sleep -Seconds 1 }; echo ''; echo '====================================================='; echo '    [SUCCESS] CLOUDFLARE PUBLIC LINKS'; echo '====================================================='; if($url){ echo ' Share these links with people outside your network:'; echo ''; echo \"   - PARTICIPANT:  $url/participant.html\"; echo \"   - DISPLAY:      $url/display.html\"; echo \"   - HOST (Admin): $url/host.html\" } else { echo ' [ERROR] Public URL not found.' }; echo '====================================================='; echo '';"
+ 
+ node server.js
+-
+-:: ?쒕쾭 醫낅즺 ??watchdog + cloudflared ?뺣━
+-taskkill /f /im cloudflared.exe >nul 2>&1
+-taskkill /f /fi "WINDOWTITLE eq CloudflareWatchdog*" >nul 2>&1
+-taskkill /f /fi "WINDOWTITLE eq SleepPreventer*" >nul 2>&1
+ pause

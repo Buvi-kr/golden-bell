@@ -220,6 +220,12 @@ header h1{font-size:16px;color:var(--orange);}
     <!-- 핵심 버튼: 다음 문제 (전체 너비) -->
     <button class="btn btn-n btn-w" id="btnN" onclick="hostNext()" disabled
       style="font-size:16px;padding:15px;font-weight:900;margin-bottom:6px;">▶ 다음 문제</button>
+    <!-- 골든벨 돌입 버튼: 15문제 블록 완료 + 골든벨 미진입 + 생존자 > 1 일 때만 활성 -->
+    <button class="btn btn-w" id="btnGB" onclick="hostGoldenBell()" disabled
+      style="background:#78350f;color:#fcd34d;font-size:14px;font-weight:900;padding:11px;
+             margin-bottom:6px;border:2px solid #f59e0b;letter-spacing:.5px;">
+      🔔 골든벨 돌입
+    </button>
     <!-- 보조 버튼 3열 -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:5px;">
       <button class="btn btn-s"   id="btnS"     onclick="hostStart()">🚀 시작</button>
@@ -342,13 +348,21 @@ const socket = io({ transports: ['websocket', 'polling'], reconnection: true, re
 
 document.addEventListener('visibilitychange', () => { if (!document.hidden && socket.connected) socket.emit('request_state'); });
 window.addEventListener('focus', () => { if (socket.connected) socket.emit('request_state'); });
-socket.on('state_sync', data => { if (data) { updateStats(data); updateButtons(data.phase||currentPhase); } });
+socket.on('state_sync', data => {
+  if (!data) return;
+  if (data.questionIndex !== undefined) currentQuestionIndex = data.questionIndex;
+  if (data.survivorCount !== undefined) currentSurvivorCount = data.survivorCount;
+  updateStats(data); updateButtons(data.phase || currentPhase);
+  updateRoundIndicator(data);
+});
 
 const players = new Map();
-let currentPhase  = 'LOBBY';
-let currentQ      = null;
-let answersClosed = false;
-let ansChart      = null;
+let currentPhase         = 'LOBBY';
+let currentQ             = null;
+let currentQuestionIndex = -1;
+let currentSurvivorCount = 0;
+let answersClosed        = false;
+let ansChart             = null;
 const LABELS = ['①','②','③','④'];
 
 // ══ Web Audio ═════════════════════════════════════════════════
@@ -423,24 +437,31 @@ socket.on('player_list', (list) => {
 });
 
 socket.on('state', data => {
-  currentPhase  = data.phase;
-  answersClosed = !!data.answersClosed;
+  currentPhase         = data.phase;
+  answersClosed        = !!data.answersClosed;
+  if (data.questionIndex !== undefined) currentQuestionIndex = data.questionIndex;
+  if (data.survivorCount !== undefined) currentSurvivorCount = data.survivorCount;
   updateStats(data); updateButtons(data.phase);
   document.getElementById('lockedBanner').style.display = (answersClosed && data.phase==='QUESTION') ? 'block' : 'none';
   if (data.question) renderQuestion(data.question, data.phase==='REVEAL'?data.question.answer:undefined, data.question.correctAnswers);
-  if (data.round && data.qInRound) {
-    document.getElementById('roundIndicator').textContent = `📍 ${data.round}회차 — ${data.qInRound}번째 문제`;
-  }
+  updateRoundIndicator(data);
 });
 
 socket.on('game_started', ({ total }) => {
-  toast(`⚡ 스피드 골든벨 시작! 총 ${total}문제 — 5초 후 시작합니다`);
+  const regular = Math.min(total, 75);
+  const goldenBell = Math.max(0, total - 75);
+  const rounds = Math.ceil(regular / 15);
+  let msg = `⚡ 스피드 골든벨 시작! ${rounds}회차 (각 15문제)`;
+  if (goldenBell > 0) msg += ` + 골든벨 ${goldenBell}문제`;
+  msg += ' — 5초 후 시작합니다';
+  toast(msg);
   players.forEach(p => p.eliminated = false);
   renderPlayers(); sfx('correct');
 });
 
 socket.on('question', q => {
   currentQ = q; answersClosed = false;
+  currentQuestionIndex = q.index;
   document.getElementById('chartCard').style.display  = 'none';
   document.getElementById('lockedBanner').style.display = 'none';
   document.getElementById('shortPanel').style.display = q.type==='short' ? 'block' : 'none';
@@ -449,9 +470,7 @@ socket.on('question', q => {
   document.getElementById('actC').textContent = '0';
   document.getElementById('ansBar').style.width = '0%';
   document.getElementById('ansNote').textContent = q.type==='short' ? '단답형 진행 중...' : '답변 대기';
-  if (q.round && q.qInRound) {
-    document.getElementById('roundIndicator').textContent = `📍 ${q.round}회차 — ${q.qInRound}번째 문제`;
-  }
+  updateRoundIndicator(q);
   renderQuestion(q); updateButtons('QUESTION');
 });
 
@@ -552,6 +571,7 @@ socket.on('reveal', ({ correctAnswer, correctAnswers, stats, eliminated:elims, s
     });
   }
 
+  currentSurvivorCount = survivorCount;
   updateStats({ survivorCount, eliminatedCount: parseInt(document.getElementById('sTotal').textContent||'0')-survivorCount });
   updateButtons('REVEAL');
   sfx(elims.length>0?'wrong':'correct');
@@ -592,7 +612,9 @@ socket.on('reset', () => {
   document.getElementById('chartCard').style.display='none';
   document.getElementById('shortPanel').style.display='none';
   document.getElementById('lockedBanner').style.display='none';
-  document.getElementById('roundIndicator').textContent='📍 —';
+  currentQuestionIndex = -1; currentSurvivorCount = 0;
+  const ri = document.getElementById('roundIndicator');
+  ri.textContent = '📍 —'; ri.style.color = 'var(--orange)';
   document.getElementById('questionArea').innerHTML='<div style="color:var(--t3);text-align:center;padding:20px;font-size:11px;">게임을 시작하세요</div>';
   renderPlayers(); updateButtons('LOBBY'); toast('🔄 초기화 완료');
 });
@@ -600,7 +622,7 @@ socket.on('questions_reloaded', ({ main }) => toast(`📂 ${main}개 문제 로�
 
 // ══ 렌더링 ════════════════════════════════════════════════════
 function updateStats(data) {
-  if (data.survivorCount !== undefined)  document.getElementById('sSurv').textContent  = data.survivorCount;
+  if (data.survivorCount !== undefined) { currentSurvivorCount = data.survivorCount; document.getElementById('sSurv').textContent = data.survivorCount; }
   if (data.eliminatedCount !== undefined) document.getElementById('sElim').textContent = data.eliminatedCount;
   if (data.totalPlayers !== undefined)   document.getElementById('sTotal').textContent = data.totalPlayers;
   if (data.questionIndex !== undefined) {
@@ -626,7 +648,37 @@ function updateButtons(ph) {
   B('btnN').disabled  = ph!=='LOBBY' && ph!=='REVEAL';
   B('btnE').disabled  = ph==='LOBBY' || ph==='GAMEOVER';
   B('btnPause').disabled = ph !== 'QUESTION' || answersClosed;
+
+  // 골든벨 돌입: REVEAL + 15문제 블록 완료 + 골든벨 미진입 + 생존자 > 1
+  const atRoundEnd   = ph === 'REVEAL' && ((currentQuestionIndex + 1) % 15 === 0);
+  const notInGB      = currentQuestionIndex < 75; // GOLDEN_BELL_START = 75
+  const needGoldenBell = atRoundEnd && notInGB && currentSurvivorCount > 1;
+  const gbBtn = B('btnGB');
+  if (gbBtn) {
+    gbBtn.disabled = !needGoldenBell;
+    gbBtn.style.background = needGoldenBell ? '#92400e' : '#78350f';
+    gbBtn.style.opacity    = needGoldenBell ? '1' : '0.35';
+  }
 }
+
+function updateRoundIndicator(data) {
+  const el = document.getElementById('roundIndicator');
+  if (!el) return;
+  if (data.isGoldenBell) {
+    el.textContent = `🔔 골든벨 ${data.goldenBellNum}번째 문제`;
+    el.style.color = 'var(--gold)';
+  } else if (data.round && data.qInRound) {
+    el.textContent = `📍 ${data.round}회차 — ${data.qInRound}번째 문제`;
+    el.style.color = 'var(--orange)';
+  }
+}
+
+function hostGoldenBell() {
+  if (!confirm('🔔 골든벨 구간(Q76~)으로 이동합니다.\n현재 생존자가 골든벨에 도전합니다. 계속하시겠습니까?')) return;
+  socket.emit('host_goldenbell');
+}
+
+socket.on('goldenbell_error', msg => toast(`⚠️ ${msg}`, 3000));
 
 function renderQuestion(q, correctAns, correctAnswers) {
   if (!q) return; currentQ = q;
@@ -690,7 +742,15 @@ function btnCooltime(id, ms = 1500) {
   return true;
 }
 
-function hostStart()    { socket.emit('host_start'); }
+function hostStart() {
+  if (!btnCooltime('btnS', 2000)) return;
+  // 0명일 때 확인
+  const playerCount = parseInt(document.getElementById('sTotal')?.textContent || '0', 10) || 0;
+  if (playerCount === 0) {
+    if (!confirm('현재 입장한 참가자가 0명입니다. 정말 시작하시겠습니까?')) return;
+  }
+  socket.emit('host_start');
+}
 
 function hostNext()     {
   if (!btnCooltime('btnN')) return;

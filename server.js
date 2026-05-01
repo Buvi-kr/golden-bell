@@ -12,6 +12,7 @@ const os      = require('os');
 const SERVER_START_TIME = new Date().toISOString();
 const QUESTION_TIME     = 15;   // 전 문제 15초 고정
 const REVEAL_DELAY      = 3000; // ms: 답변 마감 후 정답 공개까지 카운트다운
+const GOLDEN_BELL_START = 75;   // 0-indexed: Q76 = index 75부터 골든벨 구간
 
 const app    = express();
 const server = http.createServer(app);
@@ -52,14 +53,24 @@ function parseRow(row, i) {
     row['보기4'] || row['D'] || '',
   ].filter(Boolean);
 
-  let type = rawType;
+  // 한글 유형 매핑
+  const TYPE_MAP = {
+    '객관식': 'choice', '선택형': 'choice',
+    '오엑스': 'ox', 'ox': 'ox', 'o/x': 'ox', 'o x': 'ox',
+    '단답형': 'short', '주관식': 'short', '서술형': 'short',
+    'essay': 'short',
+    'comeback': 'comeback', '패자부활': 'comeback',  // 후속 필터에서 제외됨
+  };
+  let type = TYPE_MAP[rawType] || rawType;
   if (!type) {
     if (choices.length === 2 && choices[0].toUpperCase() === 'O' && choices[1].toUpperCase() === 'X') type = 'ox';
     else if (choices.length === 0) type = 'short';
     else type = 'choice';
   }
-  // essay 타입은 short로 강제 전환
-  if (type === 'essay') type = 'short';
+  if (!['choice', 'ox', 'short', 'comeback'].includes(type)) {
+    log(`Q${i + 1} 알 수 없는 유형 "${rawType}" → choice 처리`, 'WARN');
+    type = 'choice';
+  }
 
   const q = {
     id:        i + 1,
@@ -71,11 +82,35 @@ function parseRow(row, i) {
     correctAnswers: null,
   };
 
+  if (type === 'comeback') {
+    // 후속 필터에서 제외되므로 정답 파싱 스킵
+    return q;
+  }
   if (type === 'short') {
     const raw = String(row['정답'] || row['answer'] || '');
     q.correctAnswers = raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (!q.correctAnswers.length) {
+      log(`Q${i + 1} (단답형) 정답이 비어있음 — 이 문제는 모든 답이 오답 처리됨`, 'WARN');
+    }
   } else {
-    q.answer = parseInt(row['정답'] || row['answer'] || 1) - 1;
+    // OX 정답이 "O"/"X" 텍스트로 들어온 경우 처리
+    const rawAns = row['정답'] != null ? String(row['정답']).trim() : '';
+    let parsed;
+    if (type === 'ox' && /^[oxOX]$/i.test(rawAns)) {
+      parsed = rawAns.toUpperCase() === 'O' ? 1 : 2; // 1-indexed (O=1, X=2)
+    } else {
+      parsed = parseInt(rawAns || row['answer'] || 1);
+    }
+    if (!Number.isFinite(parsed)) {
+      log(`Q${i + 1} 정답 파싱 실패 ("${rawAns}") → 1번으로 fallback`, 'WARN');
+      parsed = 1;
+    }
+    q.answer = parsed - 1;
+    // 인덱스 범위 검증
+    if (q.answer < 0 || q.answer >= choices.length) {
+      log(`Q${i + 1} 정답 인덱스 ${q.answer + 1}가 보기 범위(1~${choices.length})를 벗어남 → 1번으로 클램핑`, 'WARN');
+      q.answer = 0;
+    }
   }
 
   return q;
@@ -194,13 +229,65 @@ function cq() { return state.mainQuestions[state.questionIndex]; }
 
 function survivors()   { return [...state.players.values()].filter(p => !p.eliminated); }
 
+// ══════════════════════════════════════════════════════════════
+//  단답형 채점 (합리적 모드)
+//   ① 완전 일치  ② 입력이 정답 포함 (문장형 OK)  ③ 4자+ 오타 1, 8자+ 오타 2
+// ══════════════════════════════════════════════════════════════
+function normalizeAnswer(s) {
+  return String(s || '').toLowerCase().normalize('NFC').replace(/[\s\.,\!\?]/g, '');
+}
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  if (Math.abs(m - n) > 3) return 999; // early exit
+  const dp = new Array(n + 1);
+  for (let j = 0; j <= n; j++) dp[j] = j;
+  for (let i = 1; i <= m; i++) {
+    let prev = dp[0]; dp[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const tmp = dp[j];
+      dp[j] = a[i - 1] === b[j - 1] ? prev : Math.min(prev, dp[j - 1], dp[j]) + 1;
+      prev = tmp;
+    }
+  }
+  return dp[n];
+}
+function isShortCorrect(given, correctAnswers) {
+  const g = normalizeAnswer(given);
+  if (!g) return false;
+  return (correctAnswers || []).some(a => {
+    const n = normalizeAnswer(a);
+    if (!n) return false;
+    if (g === n) return true;          // ① 완전 일치
+    if (g.includes(n)) return true;    // ② "정답은 mars 입니다" 같은 문장형
+    if (n.length >= 4) {               // ③ 오타 허용 (4자 이상 정답만)
+      const allowed = n.length >= 8 ? 2 : 1;
+      if (levenshtein(g, n) <= allowed) return true;
+    }
+    return false;
+  });
+}
+
 function roundInfo(idx) {
   return { round: Math.floor(idx / 15) + 1, qInRound: (idx % 15) + 1 };
 }
 
+// 골든벨 포함 문제 메타 반환 (round/qInRound 또는 goldenBellNum)
+function questionMeta(idx) {
+  if (idx >= GOLDEN_BELL_START) {
+    return { isGoldenBell: true, goldenBellNum: idx - GOLDEN_BELL_START + 1, round: null, qInRound: null };
+  }
+  const { round, qInRound } = roundInfo(idx);
+  return { isGoldenBell: false, goldenBellNum: null, round, qInRound };
+}
+
+const MAX_GAME_LOG = 500;
 function addGameLog(msg) {
   const entry = { ts: new Date().toISOString(), msg };
   state.gameLog.push(entry);
+  if (state.gameLog.length > MAX_GAME_LOG) state.gameLog.splice(0, state.gameLog.length - MAX_GAME_LOG);
   io.emit('game_log', entry);
   log(`[EVENT] ${msg}`);
 }
@@ -219,7 +306,7 @@ function getTextAnswers() {
 function buildStateFor(sid) {
   const p = state.players.get(sid); if (!p) return null;
   const q = cq();
-  const { round, qInRound } = state.questionIndex >= 0 ? roundInfo(state.questionIndex) : { round: 0, qInRound: 0 };
+  const meta = state.questionIndex >= 0 ? questionMeta(state.questionIndex) : { isGoldenBell: false, goldenBellNum: null, round: null, qInRound: null };
   return {
     phase:          state.phase,
     questionIndex:  state.questionIndex,
@@ -235,7 +322,7 @@ function buildStateFor(sid) {
     alreadyAnswered: p.answer !== null || p.answerText !== null,
     myAnswer:       p.answer,
     myAnswerText:   p.answerText,
-    round, qInRound,
+    ...meta,
     question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
       id: q.id, question: q.question, choices: q.choices,
       timeLimit: q.timeLimit, type: q.type,
@@ -251,7 +338,7 @@ function buildStateFor(sid) {
 function buildGenericState() {
   const q    = cq();
   const surv = survivors().length;
-  const { round, qInRound } = state.questionIndex >= 0 ? roundInfo(state.questionIndex) : { round: 0, qInRound: 0 };
+  const meta = state.questionIndex >= 0 ? questionMeta(state.questionIndex) : { isGoldenBell: false, goldenBellNum: null, round: null, qInRound: null };
   return {
     phase:          state.phase,
     questionIndex:  state.questionIndex,
@@ -262,7 +349,7 @@ function buildGenericState() {
     timeLeft:       state.timeLeft,
     timeLimit:      state.currentTimeLimit,
     answersClosed:  state.answersClosed,
-    round, qInRound,
+    ...meta,
     question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
       id: q.id, question: q.question, choices: q.choices,
       timeLimit: q.timeLimit, type: q.type,
@@ -464,7 +551,12 @@ io.on('connection', socket => {
         state.ghostPlayers.delete(uid); socket.emit('session_expired'); return;
       }
       state.ghostPlayers.delete(uid);
-      state.players.set(socket.id, { ...ghost, answer: null, answerText: null, answeredAt: null });
+      // 같은 문제 내 재접속이면 답변 보존, 그 외에는 클리어
+      const sameQ = ghost.answeredAtIndex === state.questionIndex && state.phase === 'QUESTION';
+      const restored = sameQ
+        ? { ...ghost }
+        : { ...ghost, answer: null, answerText: null, answeredAt: null, answeredAtIndex: null };
+      state.players.set(socket.id, restored);
       socket.join('players');
       socket.emit('session_restored', buildStateFor(socket.id));
       io.emit('player_joined', { name: ghost.name, total: state.players.size, survivors: survivors().length });
@@ -475,7 +567,11 @@ io.on('connection', socket => {
     for (const [sid, p] of state.players) {
       if (p.uid === uid) {
         state.players.delete(sid);
-        state.players.set(socket.id, { ...p, answer: null, answerText: null, answeredAt: null });
+        // 같은 문제 내 다른 탭/소켓이면 답변 보존
+        const sameQ = p.answeredAtIndex === state.questionIndex && state.phase === 'QUESTION';
+        state.players.set(socket.id, sameQ
+          ? { ...p }
+          : { ...p, answer: null, answerText: null, answeredAt: null, answeredAtIndex: null });
         socket.join('players');
         socket.emit('session_restored', buildStateFor(socket.id));
         log(`Session switched: ${p.name}`);
@@ -516,9 +612,13 @@ io.on('connection', socket => {
     for (const p of state.players.values()) {
       if (p.name === trimmed) { socket.emit('join_error', '이미 사용 중인 이름입니다.'); return; }
     }
-    state.players.set(socket.id, { name: trimmed, uid, eliminated: false, answer: null, answerText: null, answeredAt: null });
+    // uid가 없거나 빈 문자열이면 서버에서 생성 (ghost key 충돌 방지)
+    const safeUid = (typeof uid === 'string' && uid.length > 0)
+      ? uid
+      : `srv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    state.players.set(socket.id, { name: trimmed, uid: safeUid, eliminated: false, answer: null, answerText: null, answeredAt: null });
     socket.join('players');
-    socket.emit('joined', { name: trimmed });
+    socket.emit('joined', { name: trimmed, uid: safeUid });
     io.emit('player_joined', { name: trimmed, total: state.players.size, survivors: state.players.size });
     addGameLog(`Join: ${trimmed} (total: ${state.players.size})`);
     saveSession();
@@ -539,14 +639,14 @@ io.on('connection', socket => {
       if (!raw) return;
       const safe = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 200);
       const isFirst = p.answerText === null;
-      p.answerText = safe; p.answeredAt = now;
+      p.answerText = safe; p.answeredAt = now; p.answeredAtIndex = state.questionIndex;
       socket.emit('answer_ok', { text: safe, changed: !isFirst });
       io.emit('text_answer_in', { sid: socket.id, name: p.name, text: safe });
     } else {
       if (typeof choice !== 'number') return;
       if (p.answer === choice && p.answeredAt && now - p.answeredAt < 1500) return;
       const isFirst = p.answer === null;
-      p.answer = choice; p.answeredAt = now;
+      p.answer = choice; p.answeredAt = now; p.answeredAtIndex = state.questionIndex;
       socket.emit('answer_ok', { choice, changed: !isFirst });
     }
 
@@ -573,8 +673,12 @@ io.on('connection', socket => {
     if (!isAdmin(socket)) return;
     const mainQ = loadQuestions();
     state.mainQuestions = mainQ;
-    // pendingStartIndex가 설정돼 있으면 그 문제부터 시작
-    const pending = state.pendingStartIndex;
+    // pendingStartIndex가 설정돼 있으면 그 문제부터 시작 (실제 문제 수로 클램핑)
+    const rawPending = state.pendingStartIndex;
+    const pending = rawPending > 0 ? Math.min(rawPending, mainQ.length) : 0;
+    if (rawPending > mainQ.length && rawPending > 0) {
+      log(`pendingStartIndex(${rawPending}) > 문제 수(${mainQ.length}), Q${mainQ.length}로 클램핑`, 'WARN');
+    }
     state.questionIndex = pending > 1 ? pending - 2 : -1;
     state.pendingStartIndex = 0;
     state.phase = 'LOBBY';
@@ -601,6 +705,35 @@ io.on('connection', socket => {
   });
 
   socket.on('host_end', () => { if (!isAdmin(socket)) return; _endGame(); });
+
+  // ── Host: 골든벨 돌입 ──────────────────────────────────────
+  // 조건: REVEAL 상태 + 15문제 블록 완료 + 아직 골든벨 미진입 + Q76 이후 문제 존재
+  socket.on('host_goldenbell', () => {
+    if (!isAdmin(socket)) return;
+    if (state.phase !== 'REVEAL') return;
+    if (((state.questionIndex + 1) % 15) !== 0) {
+      socket.emit('goldenbell_error', '15문제 단위로 완료된 후에만 골든벨에 진입할 수 있습니다.');
+      return;
+    }
+    if (state.questionIndex >= GOLDEN_BELL_START) {
+      socket.emit('goldenbell_error', '이미 골든벨 구간입니다.');
+      return;
+    }
+    if (state.mainQuestions.length <= GOLDEN_BELL_START) {
+      socket.emit('goldenbell_error', `골든벨 문제(Q${GOLDEN_BELL_START + 1} 이후)가 없습니다.`);
+      return;
+    }
+    // 서버측 생존자 검증 (클라이언트 우회 차단)
+    const survCount = survivors().length;
+    if (survCount < 2) {
+      socket.emit('goldenbell_error', `생존자 ${survCount}명 — 골든벨은 2명 이상일 때만 가능합니다.`);
+      return;
+    }
+    // questionIndex를 GOLDEN_BELL_START-1 로 설정 → _doNextQuestion()이 GOLDEN_BELL_START로 올림
+    state.questionIndex = GOLDEN_BELL_START - 1;
+    addGameLog(`🔔 골든벨 돌입! (Q${GOLDEN_BELL_START + 1}부터 시작, 생존 ${survCount}명)`);
+    _doNextQuestion();
+  });
 
   // ── Host: Timer pause / resume ─────────────────────────
   socket.on('host_pause_timer', () => {
@@ -662,6 +795,8 @@ io.on('connection', socket => {
   // ── Host: 문제 지정 (로비: 시작 문제 예약 / 진행중: 다음 문제 점프) ──
   socket.on('host_jump_question', ({ targetQ }) => {
     if (!isAdmin(socket)) return;
+    // LOBBY 시점에는 mainQuestions가 비어있을 수 있음 → 75 기본값 사용
+    // 실제 클램핑은 host_start에서 mainQ.length 기준으로 수행됨
     const max = state.mainQuestions.length || 75;
     const n   = Math.max(1, Math.min(Math.round(targetQ), max));
 
@@ -683,10 +818,44 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     const p = state.players.get(socket.id);
     if (p) {
-      state.ghostPlayers.set(p.uid, { ...p, disconnectedAt: Date.now() });
+      // ─── QUESTION 단계 disconnect → 즉시 정답 검증 후 탈락 판정 (탈락 회피 방지) ───
+      if (state.phase === 'QUESTION' && !p.eliminated) {
+        const q = cq();
+        if (q) {
+          let hasAnswered = false, isCorrect = false;
+          if (q.type === 'short') {
+            hasAnswered = typeof p.answerText === 'string' && p.answerText.length > 0;
+            if (hasAnswered) isCorrect = isShortCorrect(p.answerText, q.correctAnswers);
+          } else {
+            hasAnswered = p.answer !== null && p.answer !== undefined && Number.isFinite(p.answer);
+            if (hasAnswered) isCorrect = p.answer === q.answer;
+          }
+          if (!hasAnswered) {
+            p.eliminated = true;
+            p.eliminatedAtQuestion = state.questionIndex + 1;
+            p.eliminatedReason = 'disconnect';
+            addGameLog(`💀 ${p.name} 답변 전 끊김 → 탈락`);
+          } else if (!isCorrect) {
+            p.eliminated = true;
+            p.eliminatedAtQuestion = state.questionIndex + 1;
+            p.eliminatedReason = 'wrong';
+            addGameLog(`💀 ${p.name} 오답 후 끊김 → 탈락`);
+          }
+          // 정답 후 끊김 → 살아있음 유지 (재접속 시 그대로 alive)
+        }
+      }
+
+      // uid 안전장치 (없으면 즉석 생성 — 충돌 방지)
+      const ghostKey = (typeof p.uid === 'string' && p.uid.length > 0)
+        ? p.uid
+        : `srv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      state.ghostPlayers.set(ghostKey, { ...p, uid: ghostKey, disconnectedAt: Date.now() });
       state.players.delete(socket.id);
       io.emit('player_left', { name: p.name, total: state.players.size });
-      log(`Disconnected (ghost saved): ${p.name}`);
+      const tag = p.eliminatedReason === 'disconnect' ? ' (미답 탈락)'
+                : p.eliminatedReason === 'wrong'      ? ' (오답 탈락)'
+                : ' (ghost 저장)';
+      log(`Disconnected: ${p.name}${tag}`);
       saveSession();
     }
   });
@@ -697,23 +866,30 @@ io.on('connection', socket => {
 // ══════════════════════════════════════════════════════════════
 function _doNextQuestion() {
   if (state.phase !== 'LOBBY' && state.phase !== 'REVEAL') return;
+  if (!state.mainQuestions.length) {
+    log('_doNextQuestion: mainQuestions empty, ignoring', 'WARN');
+    return;
+  }
   state.questionIndex++;
   if (state.questionIndex >= state.mainQuestions.length) { _endGame(); return; }
 
-  for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; }
+  for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; p.answeredAtIndex = null; }
   state.phase = 'QUESTION'; state.answersClosed = false;
 
   const q = state.mainQuestions[state.questionIndex];
-  const { round, qInRound } = roundInfo(state.questionIndex);
+  const meta = questionMeta(state.questionIndex);
+  const logLabel = meta.isGoldenBell
+    ? `[골든벨 ${meta.goldenBellNum}번]`
+    : `[${meta.round}회차-${meta.qInRound}번]`;
 
   io.emit('question', {
     index: state.questionIndex, total: state.mainQuestions.length,
     question: q.question, choices: q.choices, type: q.type,
-    timeLimit: QUESTION_TIME, round, qInRound,
+    timeLimit: QUESTION_TIME, ...meta,
   });
   startTimer(QUESTION_TIME, () => _onTimeUp(q));
   broadcastState();
-  addGameLog(`[${round}회차-${qInRound}번] Q${state.questionIndex + 1}: ${q.question}`);
+  addGameLog(`${logLabel} Q${state.questionIndex + 1}: ${q.question}`);
   saveSession();
 }
 
@@ -748,30 +924,28 @@ function _doReveal() {
     : [];
   let eliminatedNoAnswer = 0; // 미답으로 탈락한 인원수
 
+  // sid 역인덱스 (O(n²) → O(n))
+  const sidByPlayer = new Map();
+  for (const [sid, pl] of state.players) sidByPlayer.set(pl, sid);
+
   for (const p of pool) {
     let ok = false;
     let reason = 'wrong';
     if (q.type === 'short') {
-      const normalize = s => s.toLowerCase().replace(/[\s\.,\!\?]/g, '');
-      const given = normalize(p.answerText || '');
-      if (!given) {
-        // 🔒 미답 = 자동 탈락 (빈 문자열 매칭 버그 방지)
+      if (!p.answerText) {
+        // 🔒 미답 = 자동 탈락
         ok = false; reason = 'timeout';
       } else {
-        ok = (q.correctAnswers || []).some(a => {
-          const norm = normalize(a);
-          if (!norm) return false;
-          return given === norm || given.includes(norm) || norm.includes(given);
-        });
+        ok = isShortCorrect(p.answerText, q.correctAnswers);
       }
     } else {
-      if (p.answer === null || p.answer === undefined) {
+      if (p.answer === null || p.answer === undefined || !Number.isFinite(p.answer)) {
         ok = false; reason = 'timeout';
       } else {
         ok = p.answer === q.answer;
       }
     }
-    const sid = [...state.players.entries()].find(([, pl]) => pl === p)?.[0];
+    const sid = sidByPlayer.get(p);
     if (ok) {
       correct.push(p.name);
     } else {
@@ -809,12 +983,15 @@ function _doReveal() {
     survivors: correct, survivorCount: correct.length });
 
   // 각 탈락자에게 서버 시간 + 사유 전송
+  const elimMeta = questionMeta(state.questionIndex);
   for (const { sid, reason } of newElim) {
     if (sid) io.to(sid).emit('eliminated', {
       eliminatedAtQuestion: state.questionIndex + 1,
+      isGoldenBell:  elimMeta.isGoldenBell,
+      goldenBellNum: elimMeta.goldenBellNum,
       serverStartTime:      SERVER_START_TIME,
       serverEliminatedTime: new Date().toISOString(),
-      reason, // 'timeout' or 'wrong'
+      reason,
     });
   }
 
@@ -825,6 +1002,15 @@ function _doReveal() {
     addGameLog(`탈락: ${names}`);
   }
   broadcastState(); saveSession();
+
+  // 자동 종료 조건:
+  // (a) 전원 탈락 — 즉시 GAMEOVER
+  // (b) 골든벨 구간에서 생존자 1명 이하 — 즉시 GAMEOVER (우승 또는 전원 탈락)
+  if (correct.length === 0) {
+    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
+  } else if (state.questionIndex >= GOLDEN_BELL_START && correct.length === 1) {
+    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
+  }
 }
 
 function _endGame() {

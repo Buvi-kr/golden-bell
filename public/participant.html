@@ -154,7 +154,7 @@
       padding: 10px 14px;
       flex-shrink: 0;
     }
-    .q-num { font-size: 12px; color: var(--t2); flex-shrink: 0; }
+    .q-num { font-size: 15px; color: var(--t2); flex-shrink: 0; }
     .timer-bar-track { flex: 1; height: 7px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
     .timer-bar-fill { height: 100%; background: var(--orange); border-radius: 4px; width: 100%; }
     .timer-bar-fill.amber { background: var(--gold); }
@@ -448,8 +448,8 @@
     <div class="elim-anim" id="elimAnim">💀</div>
     <div class="elim-title">탈락!</div>
     <div class="elim-info-box" id="elimInfoBox" style="display:none">
-      <div class="elim-info-row" id="elimServerStart"></div>
       <div class="elim-info-row" id="elimQuestion"></div>
+      <div class="elim-info-row" id="elimTime" style="font-size:13px;color:var(--t2);margin-top:4px;"></div>
     </div>
     <div class="elim-notice">
       아쉽게 탈락하셨습니다!<br>10분 이내로 안내 데스크에 방문하여 상품을 수령해 주세요.
@@ -466,6 +466,11 @@
     <div class="go-icon" id="goIcon">🔔</div>
     <div class="go-title golden" id="goTitle">게임 종료!</div>
     <div class="go-winners" id="goWinners"></div>
+    <!-- 본인이 탈락한 경우 — 탈락 정보 표시 -->
+    <div class="elim-info-box" id="goElimInfo" style="display:none;margin-top:18px;">
+      <div class="elim-info-row" id="goElimQuestion"></div>
+      <div class="elim-info-row" id="goElimTime" style="font-size:13px;color:var(--t2);margin-top:4px;"></div>
+    </div>
     <div class="go-sub">수고하셨습니다!</div>
   </div>
 
@@ -506,6 +511,20 @@
     let revealDone = false;
     const LABELS = ['①', '②', '③', '④'];
 
+    // 단답형 채점 (서버와 동일 로직: ① 완전일치 ② 입력이 정답 포함 ③ 4자+ 오타1, 8자+ 오타2)
+    function _normAns(s){return String(s||'').toLowerCase().normalize('NFC').replace(/[\s\.,\!\?]/g,'');}
+    function _lev(a,b){if(a===b)return 0;const m=a.length,n=b.length;if(!m)return n;if(!n)return m;if(Math.abs(m-n)>3)return 999;const dp=new Array(n+1);for(let j=0;j<=n;j++)dp[j]=j;for(let i=1;i<=m;i++){let prev=dp[0];dp[0]=i;for(let j=1;j<=n;j++){const tmp=dp[j];dp[j]=a[i-1]===b[j-1]?prev:Math.min(prev,dp[j-1],dp[j])+1;prev=tmp;}}return dp[n];}
+    function isShortCorrect(given, correctAnswers){
+      const g=_normAns(given); if(!g) return false;
+      return (correctAnswers||[]).some(a=>{
+        const n=_normAns(a); if(!n) return false;
+        if(g===n) return true;
+        if(g.includes(n)) return true;
+        if(n.length>=4){ const t=n.length>=8?2:1; if(_lev(g,n)<=t) return true; }
+        return false;
+      });
+    }
+
     const socket = io({ transports: ['websocket', 'polling'], reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000, reconnectionDelayMax: 8000 });
 
     // ══ 연결 끊김 오버레이 ═══════════════════════════════════════
@@ -535,6 +554,14 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden && socket.connected) socket.emit('request_state'); });
     window.addEventListener('focus', () => { if (socket.connected) socket.emit('request_state'); });
 
+    function restoreElimDataIfAny() {
+      // 재접속 시 이전에 받았던 탈락 정보 복원
+      try {
+        const saved = JSON.parse(localStorage.getItem('gb_elimData') || 'null');
+        if (saved) populateElimScreen(saved);
+      } catch {}
+    }
+
     socket.on('session_restored', fs => {
       myName = fs.name || myName;
       myEliminated = !!fs.eliminated;
@@ -545,13 +572,19 @@
       localStorage.setItem('gb_name', myName);
       localStorage.setItem('gb_inGame', 'true');
       document.getElementById('waitName').textContent = `안녕하세요, ${myName}님! 👋`;
+      if (myEliminated) restoreElimDataIfAny();
       applyFullState(fs);
       showToast(`🔗 재연결됨 (${myName})`);
     });
 
     socket.on('state_sync', fs => {
       if (!fs || !inGame) return;
-      if (fs.name !== undefined) { myEliminated = !!fs.eliminated; answersClosed = !!fs.answersClosed; }
+      if (fs.name !== undefined) {
+        const wasElim = myEliminated;
+        myEliminated = !!fs.eliminated;
+        answersClosed = !!fs.answersClosed;
+        if (myEliminated && !wasElim) restoreElimDataIfAny();
+      }
       applyFullState(fs);
     });
 
@@ -591,9 +624,14 @@
           revealDone = false;
           answersClosed = !!fs.answersClosed;
 
-          const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
-          const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
-          document.getElementById('qNum').textContent = `${round}회차 ${qInRound}번`;
+          const qNumEl1 = document.getElementById('qNum');
+          if (fs.isGoldenBell) {
+            qNumEl1.textContent = `🔔 골든벨 ${fs.goldenBellNum}번`; qNumEl1.style.color = '#fcd34d';
+          } else {
+            const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
+            const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
+            qNumEl1.textContent = `${round}회차 ${qInRound}번`; qNumEl1.style.color = '';
+          }
           document.getElementById('qTextInner').textContent = fs.question.question;
           document.getElementById('qTypeTag').textContent = typeLabel(fs.question.type);
           document.getElementById('revealBox').style.display = 'none';
@@ -607,7 +645,15 @@
 
           if (answersClosed) {
             renderChoices(fs.question, true);
-            showLockedBox(myAnswerText || (myAnswer !== null ? `보기 ${myAnswer + 1}` : ''));
+            let _lockedPreview = myAnswerText || '';
+            if (!_lockedPreview && myAnswer !== null) {
+              if (currentType === 'ox') {
+                _lockedPreview = myAnswer === 0 ? 'O (맞다)' : 'X (틀리다)';
+              } else {
+                _lockedPreview = currentChoices[myAnswer] || `보기 ${myAnswer + 1}`;
+              }
+            }
+            showLockedBox(_lockedPreview);
           } else {
             renderChoices(fs.question);
             if (fs.alreadyAnswered) showSubmittedBox(myAnswerText || '', true);
@@ -626,9 +672,14 @@
         if (fs.question) {
           currentType = fs.question.type;
           currentChoices = fs.question.choices || [];
-          const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
-          const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
-          document.getElementById('qNum').textContent = `${round}회차 ${qInRound}번`;
+          const qNumEl2 = document.getElementById('qNum');
+          if (fs.isGoldenBell) {
+            qNumEl2.textContent = `🔔 골든벨 ${fs.goldenBellNum}번`; qNumEl2.style.color = '#fcd34d';
+          } else {
+            const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
+            const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
+            qNumEl2.textContent = `${round}회차 ${qInRound}번`; qNumEl2.style.color = '';
+          }
           document.getElementById('qTextInner').textContent = fs.question.question;
           document.getElementById('qTypeTag').textContent = typeLabel(fs.question.type);
           document.getElementById('submittedBox').style.display = 'none';
@@ -684,8 +735,13 @@
     socket.on('player_joined', ({ total }) => document.getElementById('waitCount').textContent = total);
     socket.on('player_left', ({ total }) => document.getElementById('waitCount').textContent = total);
     socket.on('game_started', () => {
+      // 새 게임 시작 → 이전 탈락 데이터 정리
+      localStorage.removeItem('gb_elimData');
+      myEliminated = false;
+      const elimBox = document.getElementById('elimInfoBox');
+      if (elimBox) elimBox.style.display = 'none';
       if (!inGame) return;
-      myEliminated = false; showScreen('sWait');
+      showScreen('sWait');
     });
 
     // ══ 카운트다운 ════════════════════════════════════════════════
@@ -705,16 +761,23 @@
     });
 
     // ══ 문제 ══════════════════════════════════════════════════════
-    socket.on('question', ({ index, total, question, choices, type, timeLimit, round, qInRound }) => {
+    socket.on('question', ({ index, total, question, choices, type, timeLimit, round, qInRound, isGoldenBell, goldenBellNum }) => {
       if (!inGame) return;
       myAnswer = null; myAnswerText = null;
       currentType = type; currentChoices = choices || [];
       revealDone = false; answersClosed = false;
       currentTimeLimit = timeLimit || 15;
 
-      const rnd = round || (Math.floor(index / 15) + 1);
-      const qnr = qInRound || ((index % 15) + 1);
-      document.getElementById('qNum').textContent = `${rnd}회차 ${qnr}번`;
+      const qNumEl = document.getElementById('qNum');
+      if (isGoldenBell) {
+        qNumEl.textContent = `🔔 골든벨 ${goldenBellNum}번`;
+        qNumEl.style.color = '#fcd34d';
+      } else {
+        const rnd = round || (Math.floor(index / 15) + 1);
+        const qnr = qInRound || ((index % 15) + 1);
+        qNumEl.textContent = `${rnd}회차 ${qnr}번`;
+        qNumEl.style.color = '';
+      }
       document.getElementById('qTextInner').textContent = question;
       document.getElementById('qTypeTag').textContent = typeLabel(type);
       document.getElementById('qTimer').textContent = timeLimit;
@@ -767,11 +830,11 @@
         area.innerHTML = `<div class="ox-wrap">
           <button class="ox-btn${locked ? ' locked' : ''}" onclick="selectAnswer(0)" id="ox0">
             <div class="ox-sym">⭕</div>
-            <div style="font-size:11px;color:var(--t2)">맞다 (O)</div>
+            <div style="font-size:14px;color:var(--t2)">맞다 (O)</div>
           </button>
           <button class="ox-btn${locked ? ' locked' : ''}" onclick="selectAnswer(1)" id="ox1">
             <div class="ox-sym">❌</div>
-            <div style="font-size:11px;color:var(--t2)">틀리다 (X)</div>
+            <div style="font-size:14px;color:var(--t2)">틀리다 (X)</div>
           </button>
         </div>`;
         if (myAnswer !== null) {
@@ -783,13 +846,16 @@
           <p class="short-hint">정확하게 입력하세요 (복수 정답 가능)</p>
           <input class="short-inp" id="shortInp" type="text" placeholder="답 입력"
             autocomplete="off" autocorrect="off" spellcheck="false"
-            value="${myAnswerText || ''}" ${locked ? 'disabled' : ''}>
+            ${locked ? 'disabled' : ''}>
           <button class="btn-gold btn-sm" id="shortBtn" onclick="submitText()"
             ${locked ? 'disabled' : ''}>제출하기</button>
         </div>`;
+        // value는 DOM property로 안전하게 세팅 (XSS 방지: 따옴표/스크립트 인젝션 차단)
+        const _inp = document.getElementById('shortInp');
+        if (_inp && myAnswerText) _inp.value = myAnswerText;
         if (!locked) {
-          setTimeout(() => document.getElementById('shortInp')?.focus(), 120);
-          document.getElementById('shortInp')?.addEventListener('keydown', e => { if (e.key === 'Enter') submitText(); });
+          setTimeout(() => _inp?.focus(), 120);
+          _inp?.addEventListener('keydown', e => { if (e.key === 'Enter') submitText(); });
         }
       } else {
         area.innerHTML = `<div class="choices">${(q.choices || []).map((c, i) =>
@@ -940,21 +1006,51 @@
       box.style.display = 'block';
 
       if (type === 'short') {
-        const given = (myAnswerText || '').toLowerCase().replace(/\s/g, '');
-        const ok = (correctAnswers || []).some(a => {
-          const n = a.toLowerCase().replace(/\s/g, '');
-          return given.includes(n) || n.includes(given);
-        });
+        if (!myAnswerText) {
+          box.className = 'reveal-box rb-wrong';
+          box.innerHTML = `⏰ 미답 (시간 초과)<br><span style="font-size:14px">정답: ${(correctAnswers || []).join(' / ')}</span>`;
+          return;
+        }
+        const ok = isShortCorrect(myAnswerText, correctAnswers);
         box.className = `reveal-box ${ok ? 'rb-correct' : 'rb-wrong'}`;
         box.innerHTML = `${ok ? '✅ 정답!' : '❌ 오답.'}<br><span style="font-size:14px">정답: ${(correctAnswers || []).join(' / ')}</span>`;
         return;
       }
-      const isCorrect = myAnswer === correctAnswer;
       const correctLabel = currentType === 'ox'
         ? (correctAnswer === 0 ? 'O (맞다)' : 'X (틀리다)')
         : (currentChoices[correctAnswer] || '');
+      if (myAnswer === null) {
+        box.className = 'reveal-box rb-wrong';
+        box.innerHTML = `⏰ 미답 (시간 초과)<br><span style="font-size:14px">정답: ${correctLabel}</span>`;
+        return;
+      }
+      const isCorrect = myAnswer === correctAnswer;
       box.className = `reveal-box ${isCorrect ? 'rb-correct' : 'rb-wrong'}`;
       box.textContent = isCorrect ? `✅ 정답! ${correctLabel}` : `❌ 오답. 정답: ${correctLabel}`;
+    }
+
+    // ══ 탈락 화면 정보 채우기 (eliminated 이벤트 + 재접속 복원에서 공용 사용) ══
+    function populateElimScreen(data) {
+      if (!data) return;
+      const reasonTxt = data.reason === 'timeout'    ? ' (⏰ 시간 초과)'
+                      : data.reason === 'disconnect' ? ' (📵 답변 전 끊김)'
+                      : data.reason === 'wrong'      ? ''
+                      : '';
+      const qLabel = data.isGoldenBell
+        ? `골든벨 ${data.goldenBellNum}번 문제`
+        : `제 ${data.eliminatedAtQuestion}번 문제`;
+      document.getElementById('elimInfoBox').style.display = 'flex';
+      document.getElementById('elimQuestion').textContent =
+        `${qLabel}에서 탈락하셨습니다.${reasonTxt}`;
+      // 탈락 시각 표시
+      const elimTimeEl = document.getElementById('elimTime');
+      if (elimTimeEl && data.serverEliminatedTime) {
+        const t = new Date(data.serverEliminatedTime);
+        const pad = n => String(n).padStart(2, '0');
+        elimTimeEl.textContent = `🕐 탈락 시각: ${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
+      } else if (elimTimeEl) {
+        elimTimeEl.textContent = '';
+      }
     }
 
     // ══ 탈락 / 종료 ═══════════════════════════════════════════════
@@ -964,23 +1060,16 @@
       el.style.animation = 'none';
       requestAnimationFrame(() => { el.style.animation = ''; });
 
-      if (data && data.serverStartTime) {
-        const fmt = iso => new Date(iso).toLocaleString('ko-KR', {
-          year:'numeric', month:'2-digit', day:'2-digit',
-          hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false
-        });
-        document.getElementById('elimInfoBox').style.display = 'flex';
-        document.getElementById('elimServerStart').textContent =
-          `서버 시작 시간: ${fmt(data.serverStartTime)}`;
-        const reasonTxt = data.reason === 'timeout' ? ' (⏰ 시간 초과)' : '';
-        document.getElementById('elimQuestion').textContent =
-          `제 ${data.eliminatedAtQuestion}번 문제에서 탈락하셨습니다.${reasonTxt}`;
+      if (data) {
+        try { localStorage.setItem('gb_elimData', JSON.stringify(data)); } catch {}
+        populateElimScreen(data);
       }
       showScreen('sEliminated');
     });
 
     socket.on('game_over', ({ winners, allEliminated }) => {
       inGame = false; localStorage.removeItem('gb_inGame');
+      const isWinner = !allEliminated && winners && winners.includes(myName);
       if (allEliminated) {
         document.getElementById('goIcon').textContent = '💀';
         document.getElementById('goTitle').textContent = '전원 탈락!';
@@ -988,11 +1077,41 @@
         document.getElementById('goWinners').textContent = '아쉽게 모두 탈락하셨습니다.';
         document.getElementById('goWinners').className = 'go-winners all-elim';
       } else {
-        document.getElementById('goIcon').textContent = '🔔';
-        document.getElementById('goTitle').textContent = '골든벨!';
+        document.getElementById('goIcon').textContent = isWinner ? '🏆' : '🔔';
+        document.getElementById('goTitle').textContent = isWinner ? '🎉 우승!' : '골든벨!';
         document.getElementById('goTitle').className = 'go-title golden';
         document.getElementById('goWinners').textContent = winners.length > 0 ? `🏅 ${winners.join(', ')}` : '';
         document.getElementById('goWinners').className = 'go-winners';
+      }
+      // 본인이 탈락자라면 탈락 정보 표시 (전원 탈락 / 우승자 외 모두)
+      const goBox = document.getElementById('goElimInfo');
+      if (goBox) {
+        if (myEliminated || allEliminated) {
+          try {
+            const saved = JSON.parse(localStorage.getItem('gb_elimData') || 'null');
+            if (saved) {
+              const reasonTxt = saved.reason === 'timeout'    ? ' (⏰ 시간 초과)'
+                              : saved.reason === 'disconnect' ? ' (📵 답변 전 끊김)'
+                              : saved.reason === 'wrong'      ? ''
+                              : '';
+              const qLabel = saved.isGoldenBell
+                ? `골든벨 ${saved.goldenBellNum}번 문제`
+                : `제 ${saved.eliminatedAtQuestion}번 문제`;
+              document.getElementById('goElimQuestion').textContent = `${qLabel}에서 탈락${reasonTxt}`;
+              if (saved.serverEliminatedTime) {
+                const t = new Date(saved.serverEliminatedTime);
+                const pad = n => String(n).padStart(2, '0');
+                document.getElementById('goElimTime').textContent =
+                  `🕐 탈락 시각: ${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
+              }
+              goBox.style.display = 'flex';
+            } else {
+              goBox.style.display = 'none';
+            }
+          } catch { goBox.style.display = 'none'; }
+        } else {
+          goBox.style.display = 'none';
+        }
       }
       showScreen('sGameover');
     });
@@ -1005,7 +1124,9 @@
     socket.on('reset', () => {
       myName = ''; myAnswer = null; myAnswerText = null; myEliminated = false; inGame = false;
       answersClosed = false; revealDone = false;
-      localStorage.removeItem('gb_inGame'); localStorage.removeItem('gb_name');
+      localStorage.removeItem('gb_inGame');
+      localStorage.removeItem('gb_name');
+      localStorage.removeItem('gb_elimData');
       document.getElementById('nameInput').value = '';
       document.getElementById('errMsg').textContent = '';
       document.getElementById('elimInfoBox').style.display = 'none';

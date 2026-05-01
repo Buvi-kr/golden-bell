@@ -1,0 +1,447 @@
+﻿diff --git a/server.js b/server.js
+index 56712ed..178bfe5 100644
+--- a/server.js
++++ b/server.js
+@@ -12,6 +12,7 @@ const os      = require('os');
+ const SERVER_START_TIME = new Date().toISOString();
+ const QUESTION_TIME     = 15;   // ??臾몄젣 15珥?怨좎젙
+ const REVEAL_DELAY      = 3000; // ms: ?듬? 留덇컧 ???뺣떟 怨듦컻源뚯? 移댁슫?몃떎??+const GOLDEN_BELL_START = 75;   // 0-indexed: Q76 = index 75遺??怨⑤뱺踰?援ш컙
+ 
+ const app    = express();
+ const server = http.createServer(app);
+@@ -52,14 +53,24 @@ function parseRow(row, i) {
+     row['蹂닿린4'] || row['D'] || '',
+   ].filter(Boolean);
+ 
+-  let type = rawType;
++  // ?쒓? ?좏삎 留ㅽ븨
++  const TYPE_MAP = {
++    '媛앷???: 'choice', '?좏깮??: 'choice',
++    '?ㅼ뿊??: 'ox', 'ox': 'ox', 'o/x': 'ox', 'o x': 'ox',
++    '?⑤떟??: 'short', '二쇨???: 'short', '?쒖닠??: 'short',
++    'essay': 'short',
++    'comeback': 'comeback', '?⑥옄遺??: 'comeback',  // ?꾩냽 ?꾪꽣?먯꽌 ?쒖쇅??+  };
++  let type = TYPE_MAP[rawType] || rawType;
+   if (!type) {
+     if (choices.length === 2 && choices[0].toUpperCase() === 'O' && choices[1].toUpperCase() === 'X') type = 'ox';
+     else if (choices.length === 0) type = 'short';
+     else type = 'choice';
+   }
+-  // essay ??낆? short濡?媛뺤젣 ?꾪솚
+-  if (type === 'essay') type = 'short';
++  if (!['choice', 'ox', 'short', 'comeback'].includes(type)) {
++    log(`Q${i + 1} ?????녿뒗 ?좏삎 "${rawType}" ??choice 泥섎━`, 'WARN');
++    type = 'choice';
++  }
+ 
+   const q = {
+     id:        i + 1,
+@@ -71,11 +82,35 @@ function parseRow(row, i) {
+     correctAnswers: null,
+   };
+ 
++  if (type === 'comeback') {
++    // ?꾩냽 ?꾪꽣?먯꽌 ?쒖쇅?섎?濡??뺣떟 ?뚯떛 ?ㅽ궢
++    return q;
++  }
+   if (type === 'short') {
+     const raw = String(row['?뺣떟'] || row['answer'] || '');
+     q.correctAnswers = raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
++    if (!q.correctAnswers.length) {
++      log(`Q${i + 1} (?⑤떟?? ?뺣떟??鍮꾩뼱?덉쓬 ????臾몄젣??紐⑤뱺 ?듭씠 ?ㅻ떟 泥섎━??, 'WARN');
++    }
+   } else {
+-    q.answer = parseInt(row['?뺣떟'] || row['answer'] || 1) - 1;
++    // OX ?뺣떟??"O"/"X" ?띿뒪?몃줈 ?ㅼ뼱??寃쎌슦 泥섎━
++    const rawAns = row['?뺣떟'] != null ? String(row['?뺣떟']).trim() : '';
++    let parsed;
++    if (type === 'ox' && /^[oxOX]$/i.test(rawAns)) {
++      parsed = rawAns.toUpperCase() === 'O' ? 1 : 2; // 1-indexed (O=1, X=2)
++    } else {
++      parsed = parseInt(rawAns || row['answer'] || 1);
++    }
++    if (!Number.isFinite(parsed)) {
++      log(`Q${i + 1} ?뺣떟 ?뚯떛 ?ㅽ뙣 ("${rawAns}") ??1踰덉쑝濡?fallback`, 'WARN');
++      parsed = 1;
++    }
++    q.answer = parsed - 1;
++    // ?몃뜳??踰붿쐞 寃利?+    if (q.answer < 0 || q.answer >= choices.length) {
++      log(`Q${i + 1} ?뺣떟 ?몃뜳??${q.answer + 1}媛 蹂닿린 踰붿쐞(1~${choices.length})瑜?踰쀬뼱????1踰덉쑝濡??대옩??, 'WARN');
++      q.answer = 0;
++    }
+   }
+ 
+   return q;
+@@ -194,13 +229,65 @@ function cq() { return state.mainQuestions[state.questionIndex]; }
+ 
+ function survivors()   { return [...state.players.values()].filter(p => !p.eliminated); }
+ 
++// ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
++//  ?⑤떟??梨꾩젏 (?⑸━??紐⑤뱶)
++//   ???꾩쟾 ?쇱튂  ???낅젰???뺣떟 ?ы븿 (臾몄옣??OK)  ??4?? ?ㅽ? 1, 8?? ?ㅽ? 2
++// ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
++function normalizeAnswer(s) {
++  return String(s || '').toLowerCase().normalize('NFC').replace(/[\s\.,\!\?]/g, '');
++}
++function levenshtein(a, b) {
++  if (a === b) return 0;
++  const m = a.length, n = b.length;
++  if (m === 0) return n;
++  if (n === 0) return m;
++  if (Math.abs(m - n) > 3) return 999; // early exit
++  const dp = new Array(n + 1);
++  for (let j = 0; j <= n; j++) dp[j] = j;
++  for (let i = 1; i <= m; i++) {
++    let prev = dp[0]; dp[0] = i;
++    for (let j = 1; j <= n; j++) {
++      const tmp = dp[j];
++      dp[j] = a[i - 1] === b[j - 1] ? prev : Math.min(prev, dp[j - 1], dp[j]) + 1;
++      prev = tmp;
++    }
++  }
++  return dp[n];
++}
++function isShortCorrect(given, correctAnswers) {
++  const g = normalizeAnswer(given);
++  if (!g) return false;
++  return (correctAnswers || []).some(a => {
++    const n = normalizeAnswer(a);
++    if (!n) return false;
++    if (g === n) return true;          // ???꾩쟾 ?쇱튂
++    if (g.includes(n)) return true;    // ??"?뺣떟? mars ?낅땲?? 媛숈? 臾몄옣??+    if (n.length >= 4) {               // ???ㅽ? ?덉슜 (4???댁긽 ?뺣떟留?
++      const allowed = n.length >= 8 ? 2 : 1;
++      if (levenshtein(g, n) <= allowed) return true;
++    }
++    return false;
++  });
++}
++
+ function roundInfo(idx) {
+   return { round: Math.floor(idx / 15) + 1, qInRound: (idx % 15) + 1 };
+ }
+ 
++// 怨⑤뱺踰??ы븿 臾몄젣 硫뷀? 諛섑솚 (round/qInRound ?먮뒗 goldenBellNum)
++function questionMeta(idx) {
++  if (idx >= GOLDEN_BELL_START) {
++    return { isGoldenBell: true, goldenBellNum: idx - GOLDEN_BELL_START + 1, round: null, qInRound: null };
++  }
++  const { round, qInRound } = roundInfo(idx);
++  return { isGoldenBell: false, goldenBellNum: null, round, qInRound };
++}
++
++const MAX_GAME_LOG = 500;
+ function addGameLog(msg) {
+   const entry = { ts: new Date().toISOString(), msg };
+   state.gameLog.push(entry);
++  if (state.gameLog.length > MAX_GAME_LOG) state.gameLog.splice(0, state.gameLog.length - MAX_GAME_LOG);
+   io.emit('game_log', entry);
+   log(`[EVENT] ${msg}`);
+ }
+@@ -219,7 +306,7 @@ function getTextAnswers() {
+ function buildStateFor(sid) {
+   const p = state.players.get(sid); if (!p) return null;
+   const q = cq();
+-  const { round, qInRound } = state.questionIndex >= 0 ? roundInfo(state.questionIndex) : { round: 0, qInRound: 0 };
++  const meta = state.questionIndex >= 0 ? questionMeta(state.questionIndex) : { isGoldenBell: false, goldenBellNum: null, round: null, qInRound: null };
+   return {
+     phase:          state.phase,
+     questionIndex:  state.questionIndex,
+@@ -235,7 +322,7 @@ function buildStateFor(sid) {
+     alreadyAnswered: p.answer !== null || p.answerText !== null,
+     myAnswer:       p.answer,
+     myAnswerText:   p.answerText,
+-    round, qInRound,
++    ...meta,
+     question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
+       id: q.id, question: q.question, choices: q.choices,
+       timeLimit: q.timeLimit, type: q.type,
+@@ -251,7 +338,7 @@ function buildStateFor(sid) {
+ function buildGenericState() {
+   const q    = cq();
+   const surv = survivors().length;
+-  const { round, qInRound } = state.questionIndex >= 0 ? roundInfo(state.questionIndex) : { round: 0, qInRound: 0 };
++  const meta = state.questionIndex >= 0 ? questionMeta(state.questionIndex) : { isGoldenBell: false, goldenBellNum: null, round: null, qInRound: null };
+   return {
+     phase:          state.phase,
+     questionIndex:  state.questionIndex,
+@@ -262,7 +349,7 @@ function buildGenericState() {
+     timeLeft:       state.timeLeft,
+     timeLimit:      state.currentTimeLimit,
+     answersClosed:  state.answersClosed,
+-    round, qInRound,
++    ...meta,
+     question: q && (state.phase === 'QUESTION' || state.phase === 'REVEAL') ? {
+       id: q.id, question: q.question, choices: q.choices,
+       timeLimit: q.timeLimit, type: q.type,
+@@ -464,7 +551,12 @@ io.on('connection', socket => {
+         state.ghostPlayers.delete(uid); socket.emit('session_expired'); return;
+       }
+       state.ghostPlayers.delete(uid);
+-      state.players.set(socket.id, { ...ghost, answer: null, answerText: null, answeredAt: null });
++      // 媛숈? 臾몄젣 ???ъ젒?띿씠硫??듬? 蹂댁〈, 洹??몄뿉???대━??+      const sameQ = ghost.answeredAtIndex === state.questionIndex && state.phase === 'QUESTION';
++      const restored = sameQ
++        ? { ...ghost }
++        : { ...ghost, answer: null, answerText: null, answeredAt: null, answeredAtIndex: null };
++      state.players.set(socket.id, restored);
+       socket.join('players');
+       socket.emit('session_restored', buildStateFor(socket.id));
+       io.emit('player_joined', { name: ghost.name, total: state.players.size, survivors: survivors().length });
+@@ -475,7 +567,11 @@ io.on('connection', socket => {
+     for (const [sid, p] of state.players) {
+       if (p.uid === uid) {
+         state.players.delete(sid);
+-        state.players.set(socket.id, { ...p, answer: null, answerText: null, answeredAt: null });
++        // 媛숈? 臾몄젣 ???ㅻⅨ ???뚯폆?대㈃ ?듬? 蹂댁〈
++        const sameQ = p.answeredAtIndex === state.questionIndex && state.phase === 'QUESTION';
++        state.players.set(socket.id, sameQ
++          ? { ...p }
++          : { ...p, answer: null, answerText: null, answeredAt: null, answeredAtIndex: null });
+         socket.join('players');
+         socket.emit('session_restored', buildStateFor(socket.id));
+         log(`Session switched: ${p.name}`);
+@@ -516,9 +612,13 @@ io.on('connection', socket => {
+     for (const p of state.players.values()) {
+       if (p.name === trimmed) { socket.emit('join_error', '?대? ?ъ슜 以묒씤 ?대쫫?낅땲??'); return; }
+     }
+-    state.players.set(socket.id, { name: trimmed, uid, eliminated: false, answer: null, answerText: null, answeredAt: null });
++    // uid媛 ?녾굅??鍮?臾몄옄?댁씠硫??쒕쾭?먯꽌 ?앹꽦 (ghost key 異⑸룎 諛⑹?)
++    const safeUid = (typeof uid === 'string' && uid.length > 0)
++      ? uid
++      : `srv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
++    state.players.set(socket.id, { name: trimmed, uid: safeUid, eliminated: false, answer: null, answerText: null, answeredAt: null });
+     socket.join('players');
+-    socket.emit('joined', { name: trimmed });
++    socket.emit('joined', { name: trimmed, uid: safeUid });
+     io.emit('player_joined', { name: trimmed, total: state.players.size, survivors: state.players.size });
+     addGameLog(`Join: ${trimmed} (total: ${state.players.size})`);
+     saveSession();
+@@ -539,14 +639,14 @@ io.on('connection', socket => {
+       if (!raw) return;
+       const safe = raw.replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 200);
+       const isFirst = p.answerText === null;
+-      p.answerText = safe; p.answeredAt = now;
++      p.answerText = safe; p.answeredAt = now; p.answeredAtIndex = state.questionIndex;
+       socket.emit('answer_ok', { text: safe, changed: !isFirst });
+       io.emit('text_answer_in', { sid: socket.id, name: p.name, text: safe });
+     } else {
+       if (typeof choice !== 'number') return;
+       if (p.answer === choice && p.answeredAt && now - p.answeredAt < 1500) return;
+       const isFirst = p.answer === null;
+-      p.answer = choice; p.answeredAt = now;
++      p.answer = choice; p.answeredAt = now; p.answeredAtIndex = state.questionIndex;
+       socket.emit('answer_ok', { choice, changed: !isFirst });
+     }
+ 
+@@ -573,8 +673,12 @@ io.on('connection', socket => {
+     if (!isAdmin(socket)) return;
+     const mainQ = loadQuestions();
+     state.mainQuestions = mainQ;
+-    // pendingStartIndex媛 ?ㅼ젙???덉쑝硫?洹?臾몄젣遺???쒖옉
+-    const pending = state.pendingStartIndex;
++    // pendingStartIndex媛 ?ㅼ젙???덉쑝硫?洹?臾몄젣遺???쒖옉 (?ㅼ젣 臾몄젣 ?섎줈 ?대옩??
++    const rawPending = state.pendingStartIndex;
++    const pending = rawPending > 0 ? Math.min(rawPending, mainQ.length) : 0;
++    if (rawPending > mainQ.length && rawPending > 0) {
++      log(`pendingStartIndex(${rawPending}) > 臾몄젣 ??${mainQ.length}), Q${mainQ.length}濡??대옩??, 'WARN');
++    }
+     state.questionIndex = pending > 1 ? pending - 2 : -1;
+     state.pendingStartIndex = 0;
+     state.phase = 'LOBBY';
+@@ -602,6 +706,35 @@ io.on('connection', socket => {
+ 
+   socket.on('host_end', () => { if (!isAdmin(socket)) return; _endGame(); });
+ 
++  // ?? Host: 怨⑤뱺踰??뚯엯 ??????????????????????????????????????
++  // 議곌굔: REVEAL ?곹깭 + 15臾몄젣 釉붾줉 ?꾨즺 + ?꾩쭅 怨⑤뱺踰?誘몄쭊??+ Q76 ?댄썑 臾몄젣 議댁옱
++  socket.on('host_goldenbell', () => {
++    if (!isAdmin(socket)) return;
++    if (state.phase !== 'REVEAL') return;
++    if (((state.questionIndex + 1) % 15) !== 0) {
++      socket.emit('goldenbell_error', '15臾몄젣 ?⑥쐞濡??꾨즺???꾩뿉留?怨⑤뱺踰⑥뿉 吏꾩엯?????덉뒿?덈떎.');
++      return;
++    }
++    if (state.questionIndex >= GOLDEN_BELL_START) {
++      socket.emit('goldenbell_error', '?대? 怨⑤뱺踰?援ш컙?낅땲??');
++      return;
++    }
++    if (state.mainQuestions.length <= GOLDEN_BELL_START) {
++      socket.emit('goldenbell_error', `怨⑤뱺踰?臾몄젣(Q${GOLDEN_BELL_START + 1} ?댄썑)媛 ?놁뒿?덈떎.`);
++      return;
++    }
++    // ?쒕쾭痢??앹〈??寃利?(?대씪?댁뼵???고쉶 李⑤떒)
++    const survCount = survivors().length;
++    if (survCount < 2) {
++      socket.emit('goldenbell_error', `?앹〈??${survCount}紐???怨⑤뱺踰⑥? 2紐??댁긽???뚮쭔 媛?ν빀?덈떎.`);
++      return;
++    }
++    // questionIndex瑜?GOLDEN_BELL_START-1 濡??ㅼ젙 ??_doNextQuestion()??GOLDEN_BELL_START濡??щ┝
++    state.questionIndex = GOLDEN_BELL_START - 1;
++    addGameLog(`?뵒 怨⑤뱺踰??뚯엯! (Q${GOLDEN_BELL_START + 1}遺???쒖옉, ?앹〈 ${survCount}紐?`);
++    _doNextQuestion();
++  });
++
+   // ?? Host: Timer pause / resume ?????????????????????????
+   socket.on('host_pause_timer', () => {
+     if (!isAdmin(socket)) return;
+@@ -662,6 +795,8 @@ io.on('connection', socket => {
+   // ?? Host: 臾몄젣 吏??(濡쒕퉬: ?쒖옉 臾몄젣 ?덉빟 / 吏꾪뻾以? ?ㅼ쓬 臾몄젣 ?먰봽) ??
+   socket.on('host_jump_question', ({ targetQ }) => {
+     if (!isAdmin(socket)) return;
++    // LOBBY ?쒖젏?먮뒗 mainQuestions媛 鍮꾩뼱?덉쓣 ???덉쓬 ??75 湲곕낯媛??ъ슜
++    // ?ㅼ젣 ?대옩?묒? host_start?먯꽌 mainQ.length 湲곗??쇰줈 ?섑뻾??     const max = state.mainQuestions.length || 75;
+     const n   = Math.max(1, Math.min(Math.round(targetQ), max));
+ 
+@@ -683,10 +818,44 @@ io.on('connection', socket => {
+   socket.on('disconnect', () => {
+     const p = state.players.get(socket.id);
+     if (p) {
+-      state.ghostPlayers.set(p.uid, { ...p, disconnectedAt: Date.now() });
++      // ??? QUESTION ?④퀎 disconnect ??利됱떆 ?뺣떟 寃利????덈씫 ?먯젙 (?덈씫 ?뚰뵾 諛⑹?) ???
++      if (state.phase === 'QUESTION' && !p.eliminated) {
++        const q = cq();
++        if (q) {
++          let hasAnswered = false, isCorrect = false;
++          if (q.type === 'short') {
++            hasAnswered = typeof p.answerText === 'string' && p.answerText.length > 0;
++            if (hasAnswered) isCorrect = isShortCorrect(p.answerText, q.correctAnswers);
++          } else {
++            hasAnswered = p.answer !== null && p.answer !== undefined && Number.isFinite(p.answer);
++            if (hasAnswered) isCorrect = p.answer === q.answer;
++          }
++          if (!hasAnswered) {
++            p.eliminated = true;
++            p.eliminatedAtQuestion = state.questionIndex + 1;
++            p.eliminatedReason = 'disconnect';
++            addGameLog(`?? ${p.name} ?듬? ???딄? ???덈씫`);
++          } else if (!isCorrect) {
++            p.eliminated = true;
++            p.eliminatedAtQuestion = state.questionIndex + 1;
++            p.eliminatedReason = 'wrong';
++            addGameLog(`?? ${p.name} ?ㅻ떟 ???딄? ???덈씫`);
++          }
++          // ?뺣떟 ???딄? ???댁븘?덉쓬 ?좎? (?ъ젒????洹몃?濡?alive)
++        }
++      }
++
++      // uid ?덉쟾?μ튂 (?놁쑝硫?利됱꽍 ?앹꽦 ??異⑸룎 諛⑹?)
++      const ghostKey = (typeof p.uid === 'string' && p.uid.length > 0)
++        ? p.uid
++        : `srv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
++      state.ghostPlayers.set(ghostKey, { ...p, uid: ghostKey, disconnectedAt: Date.now() });
+       state.players.delete(socket.id);
+       io.emit('player_left', { name: p.name, total: state.players.size });
+-      log(`Disconnected (ghost saved): ${p.name}`);
++      const tag = p.eliminatedReason === 'disconnect' ? ' (誘몃떟 ?덈씫)'
++                : p.eliminatedReason === 'wrong'      ? ' (?ㅻ떟 ?덈씫)'
++                : ' (ghost ???';
++      log(`Disconnected: ${p.name}${tag}`);
+       saveSession();
+     }
+   });
+@@ -697,23 +866,30 @@ io.on('connection', socket => {
+ // ?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧?먥븧
+ function _doNextQuestion() {
+   if (state.phase !== 'LOBBY' && state.phase !== 'REVEAL') return;
++  if (!state.mainQuestions.length) {
++    log('_doNextQuestion: mainQuestions empty, ignoring', 'WARN');
++    return;
++  }
+   state.questionIndex++;
+   if (state.questionIndex >= state.mainQuestions.length) { _endGame(); return; }
+ 
+-  for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; }
++  for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; p.answeredAtIndex = null; }
+   state.phase = 'QUESTION'; state.answersClosed = false;
+ 
+   const q = state.mainQuestions[state.questionIndex];
+-  const { round, qInRound } = roundInfo(state.questionIndex);
++  const meta = questionMeta(state.questionIndex);
++  const logLabel = meta.isGoldenBell
++    ? `[怨⑤뱺踰?${meta.goldenBellNum}踰?`
++    : `[${meta.round}?뚯감-${meta.qInRound}踰?`;
+ 
+   io.emit('question', {
+     index: state.questionIndex, total: state.mainQuestions.length,
+     question: q.question, choices: q.choices, type: q.type,
+-    timeLimit: QUESTION_TIME, round, qInRound,
++    timeLimit: QUESTION_TIME, ...meta,
+   });
+   startTimer(QUESTION_TIME, () => _onTimeUp(q));
+   broadcastState();
+-  addGameLog(`[${round}?뚯감-${qInRound}踰? Q${state.questionIndex + 1}: ${q.question}`);
++  addGameLog(`${logLabel} Q${state.questionIndex + 1}: ${q.question}`);
+   saveSession();
+ }
+ 
+@@ -748,30 +924,28 @@ function _doReveal() {
+     : [];
+   let eliminatedNoAnswer = 0; // 誘몃떟?쇰줈 ?덈씫???몄썝?? 
++  // sid ??씤?깆뒪 (O(n짼) ??O(n))
++  const sidByPlayer = new Map();
++  for (const [sid, pl] of state.players) sidByPlayer.set(pl, sid);
++
+   for (const p of pool) {
+     let ok = false;
+     let reason = 'wrong';
+     if (q.type === 'short') {
+-      const normalize = s => s.toLowerCase().replace(/[\s\.,\!\?]/g, '');
+-      const given = normalize(p.answerText || '');
+-      if (!given) {
+-        // ?뵏 誘몃떟 = ?먮룞 ?덈씫 (鍮?臾몄옄??留ㅼ묶 踰꾧렇 諛⑹?)
++      if (!p.answerText) {
++        // ?뵏 誘몃떟 = ?먮룞 ?덈씫
+         ok = false; reason = 'timeout';
+       } else {
+-        ok = (q.correctAnswers || []).some(a => {
+-          const norm = normalize(a);
+-          if (!norm) return false;
+-          return given === norm || given.includes(norm) || norm.includes(given);
+-        });
++        ok = isShortCorrect(p.answerText, q.correctAnswers);
+       }
+     } else {
+-      if (p.answer === null || p.answer === undefined) {
++      if (p.answer === null || p.answer === undefined || !Number.isFinite(p.answer)) {
+         ok = false; reason = 'timeout';
+       } else {
+         ok = p.answer === q.answer;
+       }
+     }
+-    const sid = [...state.players.entries()].find(([, pl]) => pl === p)?.[0];
++    const sid = sidByPlayer.get(p);
+     if (ok) {
+       correct.push(p.name);
+     } else {
+@@ -809,12 +983,15 @@ function _doReveal() {
+     survivors: correct, survivorCount: correct.length });
+ 
+   // 媛??덈씫?먯뿉寃??쒕쾭 ?쒓컙 + ?ъ쑀 ?꾩넚
++  const elimMeta = questionMeta(state.questionIndex);
+   for (const { sid, reason } of newElim) {
+     if (sid) io.to(sid).emit('eliminated', {
+       eliminatedAtQuestion: state.questionIndex + 1,
++      isGoldenBell:  elimMeta.isGoldenBell,
++      goldenBellNum: elimMeta.goldenBellNum,
+       serverStartTime:      SERVER_START_TIME,
+       serverEliminatedTime: new Date().toISOString(),
+-      reason, // 'timeout' or 'wrong'
++      reason,
+     });
+   }
+ 
+@@ -825,6 +1002,15 @@ function _doReveal() {
+     addGameLog(`?덈씫: ${names}`);
+   }
+   broadcastState(); saveSession();
++
++  // ?먮룞 醫낅즺 議곌굔:
++  // (a) ?꾩썝 ?덈씫 ??利됱떆 GAMEOVER
++  // (b) 怨⑤뱺踰?援ш컙?먯꽌 ?앹〈??1紐??댄븯 ??利됱떆 GAMEOVER (?곗듅 ?먮뒗 ?꾩썝 ?덈씫)
++  if (correct.length === 0) {
++    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
++  } else if (state.questionIndex >= GOLDEN_BELL_START && correct.length === 1) {
++    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
++  }
+ }
+ 
+ function _endGame() {

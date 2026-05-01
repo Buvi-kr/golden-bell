@@ -6,7 +6,7 @@
 <title>⚡ 스피드 골든벨 v5 — 현황판</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-<script src="/socket.io/socket.io.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -78,7 +78,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 #sQuestion{flex:1;display:none;flex-direction:column;gap:10px;padding:13px 38px;}
 /* 통계 패널은 기본(일반 해상도)에서 숨김 — UW 미디어쿼리에서만 표시 */
 #statsPanel{display:none;}
-@media (min-aspect-ratio: 2/1){#statsPanel{display:flex !important;}}
+@media (min-width: 1px){#statsPanel{display:flex !important;}}
 .pt-row{display:flex;align-items:center;gap:13px;}
 .prog-bar{flex:1;background:var(--bg2);border-radius:4px;height:7px;overflow:hidden;}
 .prog-fill{height:100%;background:var(--orange);border-radius:4px;transition:width .4s;}
@@ -218,7 +218,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 
   /* ─── 헤더 ─────────────────────────────── */
   header{
-    height:14vh;min-height:0;
+    height:25vh;min-height:0;
     padding:0 4vw;margin-top:0;
     background:linear-gradient(180deg,rgba(10,22,40,.0) 0%,rgba(10,22,40,.55) 100%);
     border-bottom:2px solid rgba(249,115,22,.55);
@@ -226,12 +226,12 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
     gap:5vw;
   }
   .logo{font-size:3vh;letter-spacing:3px;order:3;opacity:.75;white-space:nowrap;}
-  .hstats{flex:1;display:flex;justify-content:center;gap:8vw;order:2;}
+  .hstats{flex:1;display:flex;justify-content:center;gap:2vw;order:2;}
   .hstat{
     background:rgba(30,41,59,.55);backdrop-filter:blur(6px);
     border:2px solid rgba(148,163,184,.15);border-radius:2vh;
-    padding:1.5vh 3vh;
-    min-width:20vh;
+    padding:2vh 5vh;
+    min-width:30vh;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
     animation:counterSpread .7s cubic-bezier(.25,.9,.35,1.05) both;
   }
@@ -240,21 +240,21 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   .hstat:nth-child(3){animation-delay:.2s;border-color:rgba(96,165,250,.35);}
   @keyframes counterSpread{0%{transform:scale(.6);opacity:0;}65%{transform:scale(1.06);opacity:1;}100%{transform:scale(1);}}
   .hnum{
-    font-size:7.5vh !important;
+    font-size:15vh !important;
     font-weight:900;line-height:1;
     text-shadow:0 2px 12px currentColor,0 0 4px rgba(0,0,0,.5);
     filter:brightness(1.15);
   }
-  .hlbl{font-size:2.2vh !important;margin-top:.6vh;letter-spacing:2px;font-weight:700;color:var(--t2);}
+  .hlbl{font-size:3.5vh !important;margin-top:1vh;letter-spacing:2px;font-weight:700;color:var(--t2);}
 
   /* ─── 문제 화면 2열 그리드 ─────────────── */
   #sQuestion{
-    grid-template-columns:35% 1fr;
+    grid-template-columns:35% 40% 25%;
     grid-template-rows:auto auto 1fr;
     grid-template-areas:
-      "timer  banner"
-      "qbox   choices"
-      "qbox   choices";
+      "timer  banner   prize"
+      "qbox   choices  prize"
+      "qbox   choices  prize";
     padding:3vh 4vw;
     gap:2vh 4vw;
     align-items:stretch;
@@ -344,7 +344,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   .lobby-prize-card .prize-title{font-size:4.5vh;margin-bottom:1.8vh;letter-spacing:3px;}
   .lobby-prize-card .prize-line{font-size:3.6vh;line-height:1.5;margin-bottom:1vh;}
 
-  .qr-card{padding:1.5vh;border-radius:2vh;}
+  .qr-card{padding:0 !important; background:transparent !important; box-shadow:none !important; border:none !important;}
   .qr-card img{
     width:60vh !important;
     height:60vh !important;
@@ -423,7 +423,7 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
     <div class="lobby-divider"></div>
     <div class="lobby-right">
       <div class="qr-card">
-        <div class="qc tl"></div><div class="qc tr"></div><div class="qc bl"></div><div class="qc br"></div>
+        
         <img id="lobbyQrImg" src="" alt="" style="display:none;">
         <div class="qr-card-ph" id="lobbyQrPh"><span style="font-size:34px">📡</span><span>서버 시작 후 자동 표시</span></div>
       </div>
@@ -450,6 +450,12 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
       <div class="qtext" id="qText">--</div>
     </div>
     <div id="contentArea" style="flex:1;display:flex;flex-direction:column;min-height:0;"></div>
+    <!-- 상시 노출 초대형 상품 안내 영역 -->
+    <div class="lobby-prize-card" id="qPrizePanel" style="grid-area: prize; display:flex; flex-direction:column; justify-content:center; margin:0; height:100%; border-width:4px; border-radius:2vh; padding:3vh 5vh; text-align:center;">
+      <div class="prize-title" style="font-size:4.5vh; margin-bottom:2vh; color:var(--gold); letter-spacing:3px; font-weight:900;">🎁 상품 안내</div>
+      <div class="prize-line" style="font-size:3.5vh; margin-bottom:2vh; color:var(--t1); line-height:1.4;">🏆 <strong style="color:var(--orange);">최종 우승 (골든벨)</strong><br><span style="font-size:2.5vh; color:var(--t2);">특별 상품!</span></div>
+      <div class="prize-line" style="font-size:3.5vh; color:var(--t1); line-height:1.4;">🎉 <strong style="color:var(--orange);">20등 이내 생존자</strong><br><span style="font-size:2.5vh; color:var(--t2);">소정의 상품</span></div>
+    </div>
     <!-- 우측 통계/보상 패널 (울트라와이드에서만 표시) -->
     <div id="statsPanel">
       <div class="sp-card" id="spStatsCard">
@@ -491,7 +497,7 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
 <button class="qr-fab" id="qrFab" onclick="openQrOverlay()" title="QR 표시">📱</button>
 
 <script>
-const socket=io();
+const socket={on:()=>{},emit:()=>{}};
 const CIRC=2*Math.PI*31;
 const LABELS=['①','②','③','④'];
 let timeLimit=15,currentChoices=[],currentType='choice',ansChart=null;
@@ -913,5 +919,63 @@ socket.on('timer_resumed',({timeLeft,timeLimit:tl})=>{
 socket.on('show_qr_popup',()=>{if(currentCfUrl)openQrOverlay();});
 socket.on('hide_qr_popup',()=>{closeQrOverlay();});
 </script>
+
+<!-- TEST BUTTONS -->
+<div style="position:fixed; bottom:20px; left:20px; z-index:9999; display:flex; gap:10px; background:rgba(0,0,0,0.8); padding:10px; border-radius:10px;">
+  <button onclick="tLobby()" style="padding:15px; font-size:20px; cursor:pointer;">LOBBY</button>
+  <button onclick="tQuestion()" style="padding:15px; font-size:20px; cursor:pointer;">QUESTION</button>
+  <button onclick="tReveal()" style="padding:15px; font-size:20px; cursor:pointer;">CHART</button>
+  <button onclick="tGolden()" style="padding:15px; font-size:20px; cursor:pointer;">GOLDEN</button>
+</div>
+<script>
+  function tLobby() {
+    show('lobby');
+    document.getElementById('hSurv').textContent='300';
+    document.getElementById('hElim').textContent='0';
+    document.getElementById('hProg').textContent='-';
+    document.getElementById('lobbyQrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=example';
+    document.getElementById('lobbyQrImg').style.display='block';
+    document.getElementById('lobbyQrPh').style.display='none';
+  }
+  function tQuestion() {
+    show('question');
+    document.getElementById('hSurv').textContent='300';
+    document.getElementById('hElim').textContent='0';
+    document.getElementById('hProg').textContent='1/15';
+    document.getElementById('qNum').textContent='Round 1 - Q1';
+    document.getElementById('qNum').style.color='';
+    document.getElementById('qTypeBadge').innerHTML='<span class="type-badge tb-choice">Multiple Choice</span>';
+    document.getElementById('qText').textContent='Which of the following is not a fruit?';
+    
+    currentChoices = ['Apple', 'Banana', 'Carrot', 'Orange'];
+    currentType = 'choice';
+    document.getElementById('contentArea').innerHTML='<div class="cgrid t-2">' + currentChoices.map((c,i)=>
+      '<div class="ccard"><div class="clabel">'+(i+1)+'</div><div class="ctext">'+c+'</div></div>'
+    ).join('') + '</div>';
+  }
+  function tReveal() {
+    document.getElementById('hSurv').textContent='210';
+    document.getElementById('hElim').textContent='90';
+    const stats = [5, 5, 210, 80];
+    const elimStats = [5, 5, 0, 80];
+    const correctAns = 2;
+    renderChartDebounced(stats, elimStats, currentChoices, correctAns, 'choice');
+  }
+  function tGolden() {
+    show('question');
+    document.getElementById('hSurv').textContent='3';
+    document.getElementById('hElim').textContent='297';
+    document.getElementById('hProg').textContent='-';
+    document.getElementById('qNum').textContent='Golden Bell!';
+    document.getElementById('qNum').style.color='#fcd34d';
+    document.getElementById('qTypeBadge').innerHTML='<span class="type-badge tb-short">Short Answer</span>';
+    document.getElementById('qText').textContent='What is the capital of South Korea?';
+    
+    currentType = 'short';
+    submittedCount = 2;
+    document.getElementById('contentArea').innerHTML='<div class="short-display"><div class="short-top"><div class="short-count-big" id="shortCount">2</div><div class="short-lbl">answers</div></div></div>';
+  }
+</script>
 </body>
+
 </html>
