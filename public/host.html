@@ -225,12 +225,6 @@ header h1{font-size:16px;color:var(--orange);}
     <!-- 핵심 버튼: 다음 문제 (전체 너비) -->
     <button class="btn btn-n btn-w" id="btnN" onclick="hostNext()" disabled
       style="font-size:16px;padding:15px;font-weight:900;margin-bottom:6px;">▶ 다음 문제</button>
-    <!-- 골든벨 돌입 버튼: 15문제 블록 완료 + 골든벨 미진입 + 생존자 > 1 일 때만 활성 -->
-    <button class="btn btn-w" id="btnGB" onclick="hostGoldenBell()" disabled
-      style="background:#78350f;color:#fcd34d;font-size:14px;font-weight:900;padding:11px;
-             margin-bottom:6px;border:2px solid #f59e0b;letter-spacing:.5px;">
-      🔔 골든벨 돌입
-    </button>
     <!-- 보조 버튼 3열 -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:5px;">
       <button class="btn btn-s"   id="btnS"     onclick="hostStart()">🚀 시작</button>
@@ -453,13 +447,8 @@ socket.on('state', data => {
 });
 
 socket.on('game_started', ({ total }) => {
-  const regular = Math.min(total, 75);
-  const goldenBell = Math.max(0, total - 75);
-  const rounds = Math.ceil(regular / 15);
-  let msg = `⚡ 스피드 골든벨 시작! ${rounds}회차 (각 15문제)`;
-  if (goldenBell > 0) msg += ` + 골든벨 ${goldenBell}문제`;
-  msg += ' — 5초 후 시작합니다';
-  toast(msg);
+  const rounds = Math.ceil(total / 20);
+  toast(`⚡ 스피드 골든벨 시작! ${rounds}회차 (각 20문제) — 5초 후 시작합니다`);
   players.forEach(p => p.eliminated = false);
   renderPlayers(); sfx('correct');
 });
@@ -635,9 +624,9 @@ function updateStats(data) {
     document.getElementById('progTxt').textContent = `${Math.max(0,data.questionIndex+1)} / ${data.totalQuestions}`;
     document.getElementById('progF').style.width = data.totalQuestions>0 ? ((data.questionIndex+1)/data.totalQuestions*100)+'%':'0%';
     if (data.questionIndex >= 0) {
-      const round    = Math.floor(data.questionIndex / 15) + 1;
-      const qInRound = (data.questionIndex % 15) + 1;
-      document.getElementById('roundIndicator').textContent = `📍 ${round}회차 — ${qInRound}번째 문제`;
+      const round    = Math.floor(data.questionIndex / 20) + 1;
+      const qInRound = (data.questionIndex % 20) + 1;
+      document.getElementById('roundIndicator').textContent = `📍 ${round}회차 — ${qInRound}/20`;
     }
   }
   const phMap = { LOBBY:'대기중', QUESTION:'문제 진행중', REVEAL:'정답 공개', GAMEOVER:'게임 종료' };
@@ -653,37 +642,16 @@ function updateButtons(ph) {
   B('btnN').disabled  = ph!=='LOBBY' && ph!=='REVEAL';
   B('btnE').disabled  = ph==='LOBBY' || ph==='GAMEOVER';
   B('btnPause').disabled = ph !== 'QUESTION' || answersClosed;
-
-  // 골든벨 돌입: REVEAL + 15문제 블록 완료 + 골든벨 미진입 + 생존자 > 1
-  const atRoundEnd   = ph === 'REVEAL' && ((currentQuestionIndex + 1) % 15 === 0);
-  const notInGB      = currentQuestionIndex < 75; // GOLDEN_BELL_START = 75
-  const needGoldenBell = atRoundEnd && notInGB && currentSurvivorCount > 1;
-  const gbBtn = B('btnGB');
-  if (gbBtn) {
-    gbBtn.disabled = !needGoldenBell;
-    gbBtn.style.background = needGoldenBell ? '#92400e' : '#78350f';
-    gbBtn.style.opacity    = needGoldenBell ? '1' : '0.35';
-  }
 }
 
 function updateRoundIndicator(data) {
   const el = document.getElementById('roundIndicator');
   if (!el) return;
-  if (data.isGoldenBell) {
-    el.textContent = `🔔 골든벨 ${data.goldenBellNum}번째 문제`;
-    el.style.color = 'var(--gold)';
-  } else if (data.round && data.qInRound) {
+  if (data.round && data.qInRound) {
     el.textContent = `📍 ${data.round}회차 — ${data.qInRound}번째 문제`;
     el.style.color = 'var(--orange)';
   }
 }
-
-function hostGoldenBell() {
-  if (!confirm('🔔 골든벨 구간(Q76~)으로 이동합니다.\n현재 생존자가 골든벨에 도전합니다. 계속하시겠습니까?')) return;
-  socket.emit('host_goldenbell');
-}
-
-socket.on('goldenbell_error', msg => toast(`⚠️ ${msg}`, 3000));
 
 function renderQuestion(q, correctAns, correctAnswers) {
   if (!q) return; currentQ = q;

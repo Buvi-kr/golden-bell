@@ -560,14 +560,10 @@
       try { data = JSON.parse(localStorage.getItem('gb_elimData') || 'null'); } catch {}
       // localStorage에 없으면 서버 state로부터 합성 (ghost가 _doReveal에서 탈락 처리된 케이스)
       if (!data && fs && fs.eliminatedAtQuestion) {
-        const idx = fs.eliminatedAtQuestion - 1; // 1-indexed → 0-indexed
-        const isGB = idx >= 75;
         data = {
           eliminatedAtQuestion: fs.eliminatedAtQuestion,
           reason: fs.eliminatedReason || 'wrong',
           serverEliminatedTime: fs.eliminatedAt || null,
-          isGoldenBell: isGB,
-          goldenBellNum: isGB ? (idx - 75 + 1) : null,
         };
         try { localStorage.setItem('gb_elimData', JSON.stringify(data)); } catch {}
       }
@@ -637,12 +633,10 @@
           answersClosed = !!fs.answersClosed;
 
           const qNumEl1 = document.getElementById('qNum');
-          if (fs.isGoldenBell) {
-            qNumEl1.textContent = `🔔 골든벨 ${fs.goldenBellNum}번`; qNumEl1.style.color = '#fcd34d';
-          } else {
-            const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
-            const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
-            qNumEl1.textContent = `${round}회차 ${qInRound}번`; qNumEl1.style.color = '';
+          {
+            const round = fs.round || (Math.floor(fs.questionIndex / 20) + 1);
+            const qInRound = fs.qInRound || ((fs.questionIndex % 20) + 1);
+            qNumEl1.textContent = `${round}회차 ${qInRound}/20`; qNumEl1.style.color = '';
           }
           document.getElementById('qTextInner').textContent = fs.question.question;
           document.getElementById('qTypeTag').textContent = typeLabel(fs.question.type);
@@ -685,12 +679,10 @@
           currentType = fs.question.type;
           currentChoices = fs.question.choices || [];
           const qNumEl2 = document.getElementById('qNum');
-          if (fs.isGoldenBell) {
-            qNumEl2.textContent = `🔔 골든벨 ${fs.goldenBellNum}번`; qNumEl2.style.color = '#fcd34d';
-          } else {
-            const round = fs.round || (Math.floor(fs.questionIndex / 15) + 1);
-            const qInRound = fs.qInRound || ((fs.questionIndex % 15) + 1);
-            qNumEl2.textContent = `${round}회차 ${qInRound}번`; qNumEl2.style.color = '';
+          {
+            const round = fs.round || (Math.floor(fs.questionIndex / 20) + 1);
+            const qInRound = fs.qInRound || ((fs.questionIndex % 20) + 1);
+            qNumEl2.textContent = `${round}회차 ${qInRound}/20`; qNumEl2.style.color = '';
           }
           document.getElementById('qTextInner').textContent = fs.question.question;
           document.getElementById('qTypeTag').textContent = typeLabel(fs.question.type);
@@ -773,7 +765,7 @@
     });
 
     // ══ 문제 ══════════════════════════════════════════════════════
-    socket.on('question', ({ index, total, question, choices, type, timeLimit, round, qInRound, isGoldenBell, goldenBellNum }) => {
+    socket.on('question', ({ index, total, question, choices, type, timeLimit, round, qInRound }) => {
       if (!inGame) return;
       myAnswer = null; myAnswerText = null;
       currentType = type; currentChoices = choices || [];
@@ -781,15 +773,10 @@
       currentTimeLimit = timeLimit || 15;
 
       const qNumEl = document.getElementById('qNum');
-      if (isGoldenBell) {
-        qNumEl.textContent = `🔔 골든벨 ${goldenBellNum}번`;
-        qNumEl.style.color = '#fcd34d';
-      } else {
-        const rnd = round || (Math.floor(index / 15) + 1);
-        const qnr = qInRound || ((index % 15) + 1);
-        qNumEl.textContent = `${rnd}회차 ${qnr}번`;
-        qNumEl.style.color = '';
-      }
+      const rnd = round || (Math.floor(index / 20) + 1);
+      const qnr = qInRound || ((index % 20) + 1);
+      qNumEl.textContent = `${rnd}회차 ${qnr}/20`;
+      qNumEl.style.color = '';
       document.getElementById('qTextInner').textContent = question;
       document.getElementById('qTypeTag').textContent = typeLabel(type);
       document.getElementById('qTimer').textContent = timeLimit;
@@ -1048,9 +1035,7 @@
                       : data.reason === 'disconnect' ? ' (📵 답변 전 끊김)'
                       : data.reason === 'wrong'      ? ''
                       : '';
-      const qLabel = data.isGoldenBell
-        ? `골든벨 ${data.goldenBellNum}번 문제`
-        : `제 ${data.eliminatedAtQuestion}번 문제`;
+      const qLabel = `제 ${data.eliminatedAtQuestion}번 문제`;
       document.getElementById('elimInfoBox').style.display = 'flex';
       document.getElementById('elimQuestion').textContent =
         `${qLabel}에서 탈락하셨습니다.${reasonTxt}`;
@@ -1106,9 +1091,7 @@
                               : saved.reason === 'disconnect' ? ' (📵 답변 전 끊김)'
                               : saved.reason === 'wrong'      ? ''
                               : '';
-              const qLabel = saved.isGoldenBell
-                ? `골든벨 ${saved.goldenBellNum}번 문제`
-                : `제 ${saved.eliminatedAtQuestion}번 문제`;
+              const qLabel = `제 ${saved.eliminatedAtQuestion}번 문제`;
               document.getElementById('goElimQuestion').textContent = `${qLabel}에서 탈락${reasonTxt}`;
               if (saved.serverEliminatedTime) {
                 const t = new Date(saved.serverEliminatedTime);

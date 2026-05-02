@@ -12,7 +12,7 @@ const os      = require('os');
 const SERVER_START_TIME = new Date().toISOString();
 const QUESTION_TIME     = 15;   // 전 문제 15초 고정
 const REVEAL_DELAY      = 3000; // ms: 답변 마감 후 정답 공개까지 카운트다운
-const GOLDEN_BELL_START = 75;   // 0-indexed: Q76 = index 75부터 골든벨 구간
+const ROUND_SIZE = 20;          // 회차당 문제 수 (v8.2: 15 → 20, 골든벨 제거)
 
 const app    = express();
 const server = http.createServer(app);
@@ -279,14 +279,11 @@ function isShortCorrect(given, correctAnswers) {
 }
 
 function roundInfo(idx) {
-  return { round: Math.floor(idx / 15) + 1, qInRound: (idx % 15) + 1 };
+  return { round: Math.floor(idx / ROUND_SIZE) + 1, qInRound: (idx % ROUND_SIZE) + 1 };
 }
 
-// 골든벨 포함 문제 메타 반환 (round/qInRound 또는 goldenBellNum)
+// 회차 메타 (골든벨 개념 제거 — 모든 문제는 일반 회차 구조)
 function questionMeta(idx) {
-  if (idx >= GOLDEN_BELL_START) {
-    return { isGoldenBell: true, goldenBellNum: idx - GOLDEN_BELL_START + 1, round: null, qInRound: null };
-  }
   const { round, qInRound } = roundInfo(idx);
   return { isGoldenBell: false, goldenBellNum: null, round, qInRound };
 }
@@ -731,35 +728,6 @@ io.on('connection', socket => {
 
   socket.on('host_end', () => { if (!isAdmin(socket)) return; _endGame(); });
 
-  // ── Host: 골든벨 돌입 ──────────────────────────────────────
-  // 조건: REVEAL 상태 + 15문제 블록 완료 + 아직 골든벨 미진입 + Q76 이후 문제 존재
-  socket.on('host_goldenbell', () => {
-    if (!isAdmin(socket)) return;
-    if (state.phase !== 'REVEAL') return;
-    if (((state.questionIndex + 1) % 15) !== 0) {
-      socket.emit('goldenbell_error', '15문제 단위로 완료된 후에만 골든벨에 진입할 수 있습니다.');
-      return;
-    }
-    if (state.questionIndex >= GOLDEN_BELL_START) {
-      socket.emit('goldenbell_error', '이미 골든벨 구간입니다.');
-      return;
-    }
-    if (state.mainQuestions.length <= GOLDEN_BELL_START) {
-      socket.emit('goldenbell_error', `골든벨 문제(Q${GOLDEN_BELL_START + 1} 이후)가 없습니다.`);
-      return;
-    }
-    // 서버측 생존자 검증 (클라이언트 우회 차단)
-    const survCount = survivors().length;
-    if (survCount < 2) {
-      socket.emit('goldenbell_error', `생존자 ${survCount}명 — 골든벨은 2명 이상일 때만 가능합니다.`);
-      return;
-    }
-    // questionIndex를 GOLDEN_BELL_START-1 로 설정 → _doNextQuestion()이 GOLDEN_BELL_START로 올림
-    state.questionIndex = GOLDEN_BELL_START - 1;
-    addGameLog(`🔔 골든벨 돌입! (Q${GOLDEN_BELL_START + 1}부터 시작, 생존 ${survCount}명)`);
-    _doNextQuestion();
-  });
-
   // ── Host: Timer pause / resume ─────────────────────────
   socket.on('host_pause_timer', () => {
     if (!isAdmin(socket)) return;
@@ -914,9 +882,7 @@ function _doNextQuestion() {
 
   const q = state.mainQuestions[state.questionIndex];
   const meta = questionMeta(state.questionIndex);
-  const logLabel = meta.isGoldenBell
-    ? `[골든벨 ${meta.goldenBellNum}번]`
-    : `[${meta.round}회차-${meta.qInRound}번]`;
+  const logLabel = `[${meta.round}회차-${meta.qInRound}번]`;
 
   io.emit('question', {
     index: state.questionIndex, total: state.mainQuestions.length,
@@ -1086,12 +1052,13 @@ function _doReveal() {
   }
   broadcastState(); saveSession();
 
-  // 자동 종료 조건:
-  // (a) 전원 탈락 — 즉시 GAMEOVER
-  // (b) 골든벨 구간에서 생존자 1명 이하 — 즉시 GAMEOVER (우승 또는 전원 탈락)
-  if (correct.length === 0) {
-    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
-  } else if (state.questionIndex >= GOLDEN_BELL_START && correct.length === 1) {
+  // 자동 종료 조건 (v8.2: 골든벨 제거 → 회차 단위 단순화)
+  // (a) 회차 끝(20번째) + 전원 탈락 → 즉시 GAMEOVER
+  // (b) 회차 끝(20번째) + 생존자 있음 → 호스트가 다음 회차로 진행할지 종료할지 결정
+  // (c) 회차 도중 전원 탈락 → 자동 종료 X (호스트가 다음 회차/종료 선택)
+  const atRoundEnd = ((state.questionIndex + 1) % ROUND_SIZE) === 0;
+  const atFinalQ   = (state.questionIndex + 1) >= state.mainQuestions.length;
+  if (correct.length === 0 && (atRoundEnd || atFinalQ)) {
     setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
   }
 }

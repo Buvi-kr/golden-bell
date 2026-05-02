@@ -26,6 +26,8 @@ header{
 }
 .logo{font-size:22px;font-weight:900;color:var(--orange);letter-spacing:2px;}
 .hstats{display:flex;gap:52px;}
+/* 사이드 미션 QR — 일반 16:9 화면에서는 숨김 (UW에서만 표시) */
+.qrSide{display:none;}
 .hstat{text-align:center;}
 .hnum{font-size:32px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;}
 .hlbl{font-size:11px;color:var(--t3);margin-top:1px;letter-spacing:.5px;}
@@ -214,8 +216,32 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
     box-shadow:0 4px 20px rgba(249,115,22,.1);
     gap:5vw;
   }
-  .logo{font-size:3vh;letter-spacing:3px;order:3;opacity:.75;white-space:nowrap;}
-  .hstats{flex:1;display:flex;justify-content:center;gap:2vw;order:2;}
+  /* 좌측 상단 대형 로고 (생존자 카운터 정도 크기) */
+  .logo{
+    font-size:6.5vh !important;line-height:1.05;
+    font-weight:900;letter-spacing:3px;
+    color:var(--orange);text-shadow:0 0 30px rgba(249,115,22,.45),0 2px 8px rgba(0,0,0,.4);
+    order:1;opacity:1;white-space:nowrap;
+    flex-shrink:0;
+  }
+  .hstats{flex:1;display:flex;justify-content:center;align-items:center;gap:2vw;order:2;}
+  /* 사이드 미션 QR — 헤더 중앙(생존자 옆) 노출 */
+  .qrSide{
+    display:flex;flex-direction:column;align-items:center;gap:.6vh;
+    background:rgba(96,165,250,.08);
+    border:2px solid rgba(96,165,250,.4);
+    border-radius:1.5vh;padding:1.2vh 1.8vh;
+    text-decoration:none;
+    box-shadow:0 4px 16px rgba(0,0,0,.25);
+  }
+  .qrSide img{
+    width:14vh;height:14vh;background:#fff;padding:.5vh;
+    border-radius:1vh;display:block;
+  }
+  .qrSideLbl{
+    font-size:1.8vh;font-weight:900;color:var(--blue);
+    white-space:nowrap;letter-spacing:.5px;
+  }
   .hstat{
     background:rgba(30,41,59,.55);backdrop-filter:blur(6px);
     border:2px solid rgba(148,163,184,.15);border-radius:2vh;
@@ -415,8 +441,17 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
   <video id="promoVideo" src="키즈데이 로비 홍보 영상.mp4" loop muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>
 </div>
 <header>
-  <div class="logo">⚡ 스피드 골든벨</div>
+  <div class="logo">⚡ 스피드<br>골든벨</div>
   <div class="hstats">
+    <!-- 사이드 미션 QR (UW에서만 노출) — 생존자 옆에 배치 -->
+    <a class="qrSide" href="https://escape-room.cje0173.workers.dev/" target="_blank" rel="noopener" title="방탈출">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://escape-room.cje0173.workers.dev/" alt="방탈출 QR">
+      <div class="qrSideLbl">🎮 방탈출</div>
+    </a>
+    <a class="qrSide" href="https://treasurehunt.cje0173.workers.dev/" target="_blank" rel="noopener" title="보물찾기">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://treasurehunt.cje0173.workers.dev/" alt="보물찾기 QR">
+      <div class="qrSideLbl">🎁 보물찾기</div>
+    </a>
     <div class="hstat"><div class="hnum cg" id="hSurv">0</div><div class="hlbl">생존자</div></div>
     <div class="hstat"><div class="hnum cr" id="hElim">0</div><div class="hlbl">탈락자</div></div>
     <div class="hstat"><div class="hnum cb" id="hProg">-</div><div class="hlbl" id="hProgLbl">문제</div></div>
@@ -457,24 +492,9 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
       <div class="qr-url" id="qrUrlText"></div>
     </div>
     <div id="lobbyPrizePanel" style="display:none;">
-      <div class="prize-title" style="font-size:4.5vh;margin-bottom:2vh;color:var(--gold);letter-spacing:3px;font-weight:900;">🎁 상품 안내</div>
-      <div class="prize-line" style="font-size:3.5vh;margin-bottom:2vh;color:var(--t1);line-height:1.4;">🏆 <strong style="color:var(--orange);">최종 우승 (골든벨)</strong><br><span style="font-size:2.5vh;color:var(--t2);">특별 상품!</span></div>
-      <div class="prize-line" style="font-size:3.5vh;color:var(--t1);line-height:1.4;">🎉 <strong style="color:var(--orange);">20등 이내 생존자</strong><br><span style="font-size:2.5vh;color:var(--t2);">소정의 상품</span></div>
-      
-      <!-- 사이드 미션 QR -->
-      <div style="margin-top:4vh; border-top:2px dashed var(--bg3); padding-top:3vh;">
-        <div style="font-size:2.8vh; margin-bottom:1.5vh; color:var(--blue); font-weight:800;">🚀 사이드 미션 (미참여자/탈락자)</div>
-        <div style="display:flex; justify-content:center; gap:2vw;">
-          <div style="background:var(--bg0); border:1px solid var(--bg3); padding:1.5vh; border-radius:1.5vh; box-shadow:0 1vh 2vh rgba(0,0,0,0.2);">
-            <div style="font-size:2vh; font-weight:700; margin-bottom:1vh; color:var(--t1);">방탈출</div>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://escape-room.cje0173.workers.dev/" style="width:12vh; height:12vh; border-radius:1vh; background:#fff; padding:0.5vh;" alt="방탈출 QR">
-          </div>
-          <div style="background:var(--bg0); border:1px solid var(--bg3); padding:1.5vh; border-radius:1.5vh; box-shadow:0 1vh 2vh rgba(0,0,0,0.2);">
-            <div style="font-size:2vh; font-weight:700; margin-bottom:1vh; color:var(--t1);">보물찾기</div>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://treasurehunt.cje0173.workers.dev/" style="width:12vh; height:12vh; border-radius:1vh; background:#fff; padding:0.5vh;" alt="보물찾기 QR">
-          </div>
-        </div>
-      </div>
+      <div class="prize-title" style="font-size:5vh;margin-bottom:2.5vh;color:var(--gold);letter-spacing:3px;font-weight:900;">🎁 상품 안내</div>
+      <div class="prize-line" style="font-size:4vh;margin-bottom:2vh;color:var(--t1);line-height:1.4;">🏆 <strong style="color:var(--orange);">최종 우승</strong><br><span style="font-size:3vh;color:var(--t2);">특별 상품!</span></div>
+      <div class="prize-line" style="font-size:4vh;color:var(--t1);line-height:1.4;">🎉 <strong style="color:var(--orange);">회차 생존자</strong><br><span style="font-size:3vh;color:var(--t2);">소정의 상품</span></div>
     </div>
   </div>
 
@@ -496,26 +516,11 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
       <div class="qtext" id="qText">--</div>
     </div>
     <div id="contentArea" style="flex:1;display:flex;flex-direction:column;min-height:0;"></div>
-    <!-- 우측 상품 안내 패널 (UW 3단 레이아웃에서만 노출) -->
-    <div class="lobby-prize-card" id="qPrizePanel" style="display:none;flex-direction:column;justify-content:center;margin:0;height:100%;border-width:4px;border-radius:2vh;padding:3vh 5vh;text-align:center;">
-      <div class="prize-title" style="font-size:4.5vh;margin-bottom:2vh;color:var(--gold);letter-spacing:3px;font-weight:900;">🎁 상품 안내</div>
-      <div class="prize-line" style="font-size:3.5vh;margin-bottom:2vh;color:var(--t1);line-height:1.4;">🏆 <strong style="color:var(--orange);">최종 우승 (골든벨)</strong><br><span style="font-size:2.5vh;color:var(--t2);">특별 상품!</span></div>
-      <div class="prize-line" style="font-size:3.5vh;color:var(--t1);line-height:1.4;">🎉 <strong style="color:var(--orange);">20등 이내 생존자</strong><br><span style="font-size:2.5vh;color:var(--t2);">소정의 상품</span></div>
-
-      <!-- 사이드 미션 QR -->
-      <div style="margin-top:4vh; border-top:2px dashed var(--bg3); padding-top:3vh;">
-        <div style="font-size:2.8vh; margin-bottom:1.5vh; color:var(--blue); font-weight:800;">🚀 사이드 미션 (미참여자/탈락자)</div>
-        <div style="display:flex; justify-content:center; gap:2vw;">
-          <div style="background:var(--bg0); border:1px solid var(--bg3); padding:1.5vh; border-radius:1.5vh; box-shadow:0 1vh 2vh rgba(0,0,0,0.2);">
-            <div style="font-size:2vh; font-weight:700; margin-bottom:1vh; color:var(--t1);">방탈출</div>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://escape-room.cje0173.workers.dev/" style="width:12vh; height:12vh; border-radius:1vh; background:#fff; padding:0.5vh;" alt="방탈출 QR">
-          </div>
-          <div style="background:var(--bg0); border:1px solid var(--bg3); padding:1.5vh; border-radius:1.5vh; box-shadow:0 1vh 2vh rgba(0,0,0,0.2);">
-            <div style="font-size:2vh; font-weight:700; margin-bottom:1vh; color:var(--t1);">보물찾기</div>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://treasurehunt.cje0173.workers.dev/" style="width:12vh; height:12vh; border-radius:1vh; background:#fff; padding:0.5vh;" alt="보물찾기 QR">
-          </div>
-        </div>
-      </div>
+    <!-- 우측 상품 안내 패널 (UW 3단 레이아웃에서만 노출) — QR 빠진 만큼 글자 키움 -->
+    <div class="lobby-prize-card" id="qPrizePanel" style="display:none;flex-direction:column;justify-content:center;margin:0;height:100%;border-width:4px;border-radius:2vh;padding:5vh 4vh;text-align:center;gap:3vh;">
+      <div class="prize-title" style="font-size:6vh;margin-bottom:2vh;color:var(--gold);letter-spacing:3px;font-weight:900;">🎁 상품 안내</div>
+      <div class="prize-line" style="font-size:5vh;color:var(--t1);line-height:1.35;">🏆 <strong style="color:var(--orange);">최종 우승</strong><br><span style="font-size:3.6vh;color:var(--t2);font-weight:700;">특별 상품!</span></div>
+      <div class="prize-line" style="font-size:5vh;color:var(--t1);line-height:1.35;">🎉 <strong style="color:var(--orange);">회차 생존자</strong><br><span style="font-size:3.6vh;color:var(--t2);font-weight:700;">소정의 상품</span></div>
     </div>
   </div>
 
@@ -623,15 +628,10 @@ function updateHeader(d){
   document.getElementById('hElim').textContent=tot-surv;
   const hProg=document.getElementById('hProg'), hProgLbl=document.getElementById('hProgLbl');
   if(d.questionIndex>=0){
-    if(d.isGoldenBell){
-      hProg.textContent=`${d.goldenBellNum}`;
-      if(hProgLbl) hProgLbl.textContent='🔔 골든벨';
-    } else {
-      const round=d.round||(Math.floor(d.questionIndex/15)+1);
-      const qInRound=d.qInRound||((d.questionIndex%15)+1);
-      hProg.textContent=`${qInRound}/15`;
-      if(hProgLbl) hProgLbl.textContent=`${round}회차`;
-    }
+    const round=d.round||(Math.floor(d.questionIndex/20)+1);
+    const qInRound=d.qInRound||((d.questionIndex%20)+1);
+    hProg.textContent=`${qInRound}/20`;
+    if(hProgLbl) hProgLbl.textContent=`${round}회차`;
   } else {
     hProg.textContent='-';
     if(hProgLbl) hProgLbl.textContent='문제';
@@ -640,15 +640,10 @@ function updateHeader(d){
 function applyQuestionView(data){
   const q=data.question;if(!q)return;
   const qNumEl=document.getElementById('qNum');
-  if(data.isGoldenBell){
-    qNumEl.textContent=`🔔 골든벨 ${data.goldenBellNum}번째 문제`;
-    qNumEl.style.color='#fcd34d';
-  } else {
-    const round=data.round||(Math.floor(data.questionIndex/15)+1);
-    const qInRound=data.qInRound||((data.questionIndex%15)+1);
-    qNumEl.textContent=`${round}회차 — ${qInRound}/15`;
-    qNumEl.style.color='';
-  }
+  const round=data.round||(Math.floor(data.questionIndex/20)+1);
+  const qInRound=data.qInRound||((data.questionIndex%20)+1);
+  qNumEl.textContent=`${round}회차 — ${qInRound}/20`;
+  qNumEl.style.color='';
   document.getElementById('qTypeBadge').innerHTML=`<span class="type-badge ${tbClass[q.type]||'tb-choice'}">${typeMap[q.type]||q.type}</span>`;
   document.getElementById('qText').textContent=q.question;
   document.getElementById('progFill').style.width=`${((data.questionIndex+1)/data.totalQuestions)*100}%`;
@@ -676,17 +671,12 @@ socket.on('state',data=>{
 socket.on('player_joined',({total})=>{document.getElementById('lCount').textContent=total;document.getElementById('hSurv').textContent=total;});
 socket.on('player_left',({total})=>document.getElementById('lCount').textContent=total);
 
-socket.on('question',({index,total,question,choices,type,timeLimit:tl,round,qInRound,isGoldenBell,goldenBellNum})=>{
+socket.on('question',({index,total,question,choices,type,timeLimit:tl,round,qInRound})=>{
   timeLimit=tl||15;submittedCount=0;answersLocked=false;
   const qNumEl=document.getElementById('qNum');
-  if(isGoldenBell){
-    qNumEl.textContent=`🔔 골든벨 ${goldenBellNum}번째 문제`;
-    qNumEl.style.color='#fcd34d';
-  } else {
-    const roundTxt=(round&&qInRound)?`${round}회차 — ${qInRound}/15`:`문제 ${index+1}`;
-    qNumEl.textContent=roundTxt;
-    qNumEl.style.color='';
-  }
+  const roundTxt=(round&&qInRound)?`${round}회차 — ${qInRound}/20`:`문제 ${index+1}`;
+  qNumEl.textContent=roundTxt;
+  qNumEl.style.color='';
   document.getElementById('qTypeBadge').innerHTML=`<span class="type-badge ${tbClass[type]||'tb-choice'}">${typeMap[type]||type}</span>`;
   document.getElementById('qText').textContent=question;
   document.getElementById('progFill').style.width=`${((index+1)/total)*100}%`;
