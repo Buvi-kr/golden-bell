@@ -554,12 +554,24 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden && socket.connected) socket.emit('request_state'); });
     window.addEventListener('focus', () => { if (socket.connected) socket.emit('request_state'); });
 
-    function restoreElimDataIfAny() {
-      // 재접속 시 이전에 받았던 탈락 정보 복원
-      try {
-        const saved = JSON.parse(localStorage.getItem('gb_elimData') || 'null');
-        if (saved) populateElimScreen(saved);
-      } catch {}
+    function restoreElimDataIfAny(fs) {
+      // 재접속 시 탈락 정보 복원: ① localStorage  ② 서버 state (ghost로 탈락 처리된 경우)
+      let data = null;
+      try { data = JSON.parse(localStorage.getItem('gb_elimData') || 'null'); } catch {}
+      // localStorage에 없으면 서버 state로부터 합성 (ghost가 _doReveal에서 탈락 처리된 케이스)
+      if (!data && fs && fs.eliminatedAtQuestion) {
+        const idx = fs.eliminatedAtQuestion - 1; // 1-indexed → 0-indexed
+        const isGB = idx >= 75;
+        data = {
+          eliminatedAtQuestion: fs.eliminatedAtQuestion,
+          reason: fs.eliminatedReason || 'wrong',
+          serverEliminatedTime: fs.eliminatedAt || null,
+          isGoldenBell: isGB,
+          goldenBellNum: isGB ? (idx - 75 + 1) : null,
+        };
+        try { localStorage.setItem('gb_elimData', JSON.stringify(data)); } catch {}
+      }
+      if (data) populateElimScreen(data);
     }
 
     socket.on('session_restored', fs => {
@@ -572,7 +584,7 @@
       localStorage.setItem('gb_name', myName);
       localStorage.setItem('gb_inGame', 'true');
       document.getElementById('waitName').textContent = `안녕하세요, ${myName}님! 👋`;
-      if (myEliminated) restoreElimDataIfAny();
+      if (myEliminated) restoreElimDataIfAny(fs);
       applyFullState(fs);
       showToast(`🔗 재연결됨 (${myName})`);
     });
@@ -583,7 +595,7 @@
         const wasElim = myEliminated;
         myEliminated = !!fs.eliminated;
         answersClosed = !!fs.answersClosed;
-        if (myEliminated && !wasElim) restoreElimDataIfAny();
+        if (myEliminated && !wasElim) restoreElimDataIfAny(fs);
       }
       applyFullState(fs);
     });

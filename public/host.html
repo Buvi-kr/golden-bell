@@ -215,6 +215,11 @@ header h1{font-size:16px;color:var(--orange);}
   <!-- 제어 버튼 -->
   <div class="card">
     <div class="ct">🎮 게임 제어</div>
+    <!-- 화면 송출 제어 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;">
+      <button class="btn" onclick="socket.emit('host_display_mode',{mode:'promo'})" style="background:#8b5cf6;color:#fff;font-size:12px;">🎥 홍보 영상</button>
+      <button class="btn" onclick="socket.emit('host_display_mode',{mode:'lobby'})" style="background:#14b8a6;color:#fff;font-size:12px;">📺 대기 화면</button>
+    </div>
     <!-- 회차 표시 -->
     <div class="round-indicator" id="roundIndicator">📍 —</div>
     <!-- 핵심 버튼: 다음 문제 (전체 너비) -->

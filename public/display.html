@@ -57,28 +57,17 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 .lobby-right{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:clamp(10px,1.8vh,20px);padding:40px 60px 40px 20px;position:relative;z-index:1;}
 .qr-card{background:#fff;border-radius:16px;padding:clamp(7px,1.1vw,14px);position:relative;overflow:visible;
-  box-shadow:0 0 0 6px rgba(249,115,22,.12),0 0 60px rgba(249,115,22,.17);}
+  box-shadow:0 0 60px rgba(249,115,22,.17);}
 .qr-card img{display:block;width:clamp(165px,21vw,316px);height:clamp(165px,21vw,316px);border-radius:7px;}
 .qr-card-ph{width:clamp(165px,21vw,316px);height:clamp(165px,21vw,316px);background:var(--bg2);
   border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:10px;color:var(--t3);font-size:14px;text-align:center;padding:20px;}
-/* QR 카드 주황 코너 브라켓 — right/bottom 으로 단순 대칭 */
-.qc{position:absolute;width:28px;height:28px;box-sizing:border-box;
-  border-color:var(--orange);border-style:solid;z-index:2;pointer-events:none;
-  animation:qcPulse 2.4s ease-in-out infinite;}
-.qc.tl{top:-4px;    left:-4px;  border-width:4px 0 0 4px;border-radius:14px 0 0 0;animation-delay:0s;}
-.qc.tr{top:-4px;    right:-4px; border-width:4px 4px 0 0;border-radius:0 14px 0 0;animation-delay:.6s;}
-.qc.br{bottom:-4px; right:-4px; border-width:0 4px 4px 0;border-radius:0 0 14px 0;animation-delay:1.2s;}
-.qc.bl{bottom:-4px; left:-4px;  border-width:0 0 4px 4px;border-radius:0 0 0 14px;animation-delay:1.8s;}
-@keyframes qcPulse{0%,100%{opacity:.85;filter:drop-shadow(0 0 0 rgba(249,115,22,0))}50%{opacity:1;filter:drop-shadow(0 0 8px rgba(249,115,22,.55))}}
+
 .qr-label{font-size:clamp(14px,1.5vw,21px);font-weight:700;color:var(--t1);text-align:center;}
 .qr-url{font-size:clamp(9px,.85vw,12px);color:var(--blue);text-align:center;max-width:clamp(165px,21vw,316px);word-break:break-all;opacity:.8;}
 
 /* ══ 문제 ══ */
 #sQuestion{flex:1;display:none;flex-direction:column;gap:10px;padding:13px 38px;}
-/* 통계 패널은 기본(일반 해상도)에서 숨김 — UW 미디어쿼리에서만 표시 */
-#statsPanel{display:none;}
-@media (min-aspect-ratio: 2/1){#statsPanel{display:flex !important;}}
 .pt-row{display:flex;align-items:center;gap:13px;}
 .prog-bar{flex:1;background:var(--bg2);border-radius:4px;height:7px;overflow:hidden;}
 .prog-fill{height:100%;background:var(--orange);border-radius:4px;transition:width .4s;}
@@ -163,7 +152,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 /* QR 오버레이 */
 .qr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:200;}
 .qr-overlay.show{display:flex;}
-.qr-popup{background:var(--bg1);border:4px solid var(--orange);border-radius:24px;
+.qr-popup{background:var(--bg1);border:none;border-radius:24px;
   padding:clamp(20px,2.8vw,44px);text-align:center;animation:popIn .4s cubic-bezier(.34,1.56,.64,1);max-width:90vw;}
 @keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
 .qp-icon{font-size:clamp(30px,4vw,50px);margin-bottom:7px;}
@@ -216,9 +205,9 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
    ══════════════════════════════════════════════════════════ */
 @media (min-aspect-ratio: 2/1) {
 
-  /* ─── 헤더 ─────────────────────────────── */
+  /* ─── 헤더 — 멀리서도 보이도록 대형화 ───────── */
   header{
-    height:14vh;min-height:0;
+    height:25vh;min-height:0;
     padding:0 4vw;margin-top:0;
     background:linear-gradient(180deg,rgba(10,22,40,.0) 0%,rgba(10,22,40,.55) 100%);
     border-bottom:2px solid rgba(249,115,22,.55);
@@ -226,12 +215,12 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
     gap:5vw;
   }
   .logo{font-size:3vh;letter-spacing:3px;order:3;opacity:.75;white-space:nowrap;}
-  .hstats{flex:1;display:flex;justify-content:center;gap:8vw;order:2;}
+  .hstats{flex:1;display:flex;justify-content:center;gap:2vw;order:2;}
   .hstat{
     background:rgba(30,41,59,.55);backdrop-filter:blur(6px);
     border:2px solid rgba(148,163,184,.15);border-radius:2vh;
-    padding:1.5vh 3vh;
-    min-width:20vh;
+    padding:2vh 5vh;
+    min-width:30vh;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
     animation:counterSpread .7s cubic-bezier(.25,.9,.35,1.05) both;
   }
@@ -240,24 +229,59 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   .hstat:nth-child(3){animation-delay:.2s;border-color:rgba(96,165,250,.35);}
   @keyframes counterSpread{0%{transform:scale(.6);opacity:0;}65%{transform:scale(1.06);opacity:1;}100%{transform:scale(1);}}
   .hnum{
-    font-size:7.5vh !important;
+    font-size:15vh !important;
     font-weight:900;line-height:1;
     text-shadow:0 2px 12px currentColor,0 0 4px rgba(0,0,0,.5);
     filter:brightness(1.15);
   }
-  .hlbl{font-size:2.2vh !important;margin-top:.6vh;letter-spacing:2px;font-weight:700;color:var(--t2);}
+  .hlbl{font-size:3.5vh !important;margin-top:1vh;letter-spacing:2px;font-weight:700;color:var(--t2);}
 
-  /* ─── 문제 화면 2열 그리드 ─────────────── */
+  /* ─── 로비 화면 3단 그리드 [좌 35% (QR) | 중 40% (인원) | 우 25% (상품)] ─── */
+  #sLobby {
+    grid-template-columns: 35% 40% 25%;
+    grid-template-areas: "qr center prize";
+    align-items: center;
+    padding: 3vh 4vw;
+    gap: 2vh 4vw;
+  }
+  .lobby-left { grid-area: center; padding: 0 !important; }
+  .lobby-divider { display: none !important; }
+  .lobby-right { grid-area: qr; padding: 0 !important; }
+  #lobbyPrizePanel {
+    grid-area: prize;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    border: 3px solid rgba(249,115,22,.28);
+    background: linear-gradient(145deg, #0f1e36, #0a1628);
+    box-shadow: 0 6px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(249,115,22,.08);
+    border-radius: 2.5vh;
+    padding: 3vh 5vh;
+    text-align: center;
+    align-self: stretch;
+    animation: spreadIn .6s cubic-bezier(.25,.9,.35,1.05) both;
+    animation-delay: .25s;
+  }
+
+  /* ─── 문제 화면 3단 그리드 [좌 35% | 중 40% | 우 25%] ─── */
   #sQuestion{
-    grid-template-columns:35% 1fr;
+    grid-template-columns:35% 40% 25%;
     grid-template-rows:auto auto 1fr;
     grid-template-areas:
-      "timer  banner"
-      "qbox   choices"
-      "qbox   choices";
+      "timer  banner   prize"
+      "qbox   choices  prize"
+      "qbox   choices  prize";
     padding:3vh 4vw;
     gap:2vh 4vw;
     align-items:stretch;
+  }
+  /* 우측 상품 안내 패널 (UW 전용 노출) */
+  #qPrizePanel{
+    grid-area:prize !important;
+    display:flex !important;
+    align-self:stretch;
+    animation:spreadIn .6s cubic-bezier(.25,.9,.35,1.05) both;
+    animation-delay:.25s;
   }
   .pt-row{
     grid-area:timer;
@@ -330,7 +354,6 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
   .short-grid{max-height:25vh;}
 
   /* ─── 로비 ─────────────────────────────── */
-  #sLobby{flex-direction:row;}
   .lobby-qr-section{flex:1;align-items:center;justify-content:center;padding:3vh 5vw;gap:2.5vh;}
   .lobby-info-section{flex:1;align-items:center;justify-content:center;padding:3vh 5vw;gap:2.5vh;overflow:hidden;}
 
@@ -388,6 +411,9 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
 </style>
 </head>
 <body>
+<div id="promoWrapper" style="position:fixed;inset:0;background:#000;z-index:9999;opacity:1;transition:opacity 1s ease-in-out;pointer-events:none;display:flex;align-items:center;justify-content:center;padding:60px 0;box-sizing:border-box;">
+  <video id="promoVideo" src="키즈데이 로비 홍보 영상.mp4" loop muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+</div>
 <header>
   <div class="logo">⚡ 스피드 골든벨</div>
   <div class="hstats">
@@ -423,12 +449,32 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
     <div class="lobby-divider"></div>
     <div class="lobby-right">
       <div class="qr-card">
-        <div class="qc tl"></div><div class="qc tr"></div><div class="qc bl"></div><div class="qc br"></div>
+
         <img id="lobbyQrImg" src="" alt="" style="display:none;">
         <div class="qr-card-ph" id="lobbyQrPh"><span style="font-size:34px">📡</span><span>서버 시작 후 자동 표시</span></div>
       </div>
       <div class="qr-label">📲 스캔하여 참여</div>
       <div class="qr-url" id="qrUrlText"></div>
+    </div>
+    <div id="lobbyPrizePanel" style="display:none;">
+      <div class="prize-title" style="font-size:4.5vh;margin-bottom:2vh;color:var(--gold);letter-spacing:3px;font-weight:900;">🎁 상품 안내</div>
+      <div class="prize-line" style="font-size:3.5vh;margin-bottom:2vh;color:var(--t1);line-height:1.4;">🏆 <strong style="color:var(--orange);">최종 우승 (골든벨)</strong><br><span style="font-size:2.5vh;color:var(--t2);">특별 상품!</span></div>
+      <div class="prize-line" style="font-size:3.5vh;color:var(--t1);line-height:1.4;">🎉 <strong style="color:var(--orange);">20등 이내 생존자</strong><br><span style="font-size:2.5vh;color:var(--t2);">소정의 상품</span></div>
+      
+      <!-- 사이드 미션 QR -->
+      <div style="margin-top:4vh; border-top:2px dashed var(--bg3); padding-top:3vh;">
+        <div style="font-size:2.8vh; margin-bottom:1.5vh; color:var(--blue); font-weight:800;">🚀 사이드 미션 (미참여자/탈락자)</div>
+        <div style="display:flex; justify-content:center; gap:2vw;">
+          <div style="background:var(--bg0); border:1px solid var(--bg3); padding:1.5vh; border-radius:1.5vh; box-shadow:0 1vh 2vh rgba(0,0,0,0.2);">
+            <div style="font-size:2vh; font-weight:700; margin-bottom:1vh; color:var(--t1);">방탈출</div>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://escape-room.cje0173.workers.dev/" style="width:12vh; height:12vh; border-radius:1vh; background:#fff; padding:0.5vh;" alt="방탈출 QR">
+          </div>
+          <div style="background:var(--bg0); border:1px solid var(--bg3); padding:1.5vh; border-radius:1.5vh; box-shadow:0 1vh 2vh rgba(0,0,0,0.2);">
+            <div style="font-size:2vh; font-weight:700; margin-bottom:1vh; color:var(--t1);">보물찾기</div>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://treasurehunt.cje0173.workers.dev/" style="width:12vh; height:12vh; border-radius:1vh; background:#fff; padding:0.5vh;" alt="보물찾기 QR">
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -450,16 +496,25 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
       <div class="qtext" id="qText">--</div>
     </div>
     <div id="contentArea" style="flex:1;display:flex;flex-direction:column;min-height:0;"></div>
-    <!-- 우측 통계/보상 패널 (울트라와이드에서만 표시) -->
-    <div id="statsPanel">
-      <div class="sp-card" id="spStatsCard">
-        <div class="sp-title">💀 탈락자 선택 분포</div>
-        <div id="spStatsBody"><div class="sp-empty">정답 공개 후 표시됩니다</div></div>
-      </div>
-      <div class="sp-card">
-        <div class="sp-title">🎁 상품 안내</div>
-        <div class="sp-reward-line">🎁 <span><strong>20등 이내</strong> 소정의 상품</span></div>
-        <div class="sp-reward-line special">🏆 <span>최종 <strong>골든벨 우승자</strong> 특별 상품!</span></div>
+    <!-- 우측 상품 안내 패널 (UW 3단 레이아웃에서만 노출) -->
+    <div class="lobby-prize-card" id="qPrizePanel" style="display:none;flex-direction:column;justify-content:center;margin:0;height:100%;border-width:4px;border-radius:2vh;padding:3vh 5vh;text-align:center;">
+      <div class="prize-title" style="font-size:4.5vh;margin-bottom:2vh;color:var(--gold);letter-spacing:3px;font-weight:900;">🎁 상품 안내</div>
+      <div class="prize-line" style="font-size:3.5vh;margin-bottom:2vh;color:var(--t1);line-height:1.4;">🏆 <strong style="color:var(--orange);">최종 우승 (골든벨)</strong><br><span style="font-size:2.5vh;color:var(--t2);">특별 상품!</span></div>
+      <div class="prize-line" style="font-size:3.5vh;color:var(--t1);line-height:1.4;">🎉 <strong style="color:var(--orange);">20등 이내 생존자</strong><br><span style="font-size:2.5vh;color:var(--t2);">소정의 상품</span></div>
+
+      <!-- 사이드 미션 QR -->
+      <div style="margin-top:4vh; border-top:2px dashed var(--bg3); padding-top:3vh;">
+        <div style="font-size:2.8vh; margin-bottom:1.5vh; color:var(--blue); font-weight:800;">🚀 사이드 미션 (미참여자/탈락자)</div>
+        <div style="display:flex; justify-content:center; gap:2vw;">
+          <div style="background:var(--bg0); border:1px solid var(--bg3); padding:1.5vh; border-radius:1.5vh; box-shadow:0 1vh 2vh rgba(0,0,0,0.2);">
+            <div style="font-size:2vh; font-weight:700; margin-bottom:1vh; color:var(--t1);">방탈출</div>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://escape-room.cje0173.workers.dev/" style="width:12vh; height:12vh; border-radius:1vh; background:#fff; padding:0.5vh;" alt="방탈출 QR">
+          </div>
+          <div style="background:var(--bg0); border:1px solid var(--bg3); padding:1.5vh; border-radius:1.5vh; box-shadow:0 1vh 2vh rgba(0,0,0,0.2);">
+            <div style="font-size:2vh; font-weight:700; margin-bottom:1vh; color:var(--t1);">보물찾기</div>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://treasurehunt.cje0173.workers.dev/" style="width:12vh; height:12vh; border-radius:1vh; background:#fff; padding:0.5vh;" alt="보물찾기 QR">
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -492,6 +547,18 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
 
 <script>
 const socket=io();
+socket.on('display_mode', ({ mode }) => {
+  const w = document.getElementById('promoWrapper');
+  const v = document.getElementById('promoVideo');
+  if(!w || !v) return;
+  if (mode === 'promo') {
+    w.style.opacity = '1';
+    v.play().catch(e=>console.log(e));
+  } else {
+    w.style.opacity = '0';
+    setTimeout(() => v.pause(), 1000);
+  }
+});
 const CIRC=2*Math.PI*31;
 const LABELS=['①','②','③','④'];
 let timeLimit=15,currentChoices=[],currentType='choice',ansChart=null;
@@ -541,7 +608,7 @@ let _currentScreen = 'lobby';
 function show(id){
   _currentScreen = id;
   const isUW = uwMQ.matches;
-  document.getElementById('sLobby').style.display    = id==='lobby'    ? 'flex' : 'none';
+  document.getElementById('sLobby').style.display    = id==='lobby'    ? (isUW ? 'grid' : 'flex') : 'none';
   document.getElementById('sQuestion').style.display = id==='question' ? (isUW ? 'grid' : 'flex') : 'none';
   document.getElementById('sGameover').style.display = id==='gameover' ? 'flex' : 'none';
   const fab=document.getElementById('qrFab');
@@ -568,14 +635,7 @@ function applyQuestionView(data){
   document.getElementById('progFill').style.width=`${((data.questionIndex+1)/data.totalQuestions)*100}%`;
   document.getElementById('trNum').textContent=data.timeLeft||'--';
   renderChoices(q.choices||[],q.type,data.phase==='REVEAL'?q.answer:undefined);
-  if(data.phase==='REVEAL'&&data.answerStats)renderChart(data.answerStats,q.choices||[],q.answer,q.type);
-  // 탈락자 통계 패널 복원 (재접속 대비)
-  if(data.phase==='REVEAL'){
-    renderEliminatedStats(q.type,q.choices||[],q.answer,data.eliminatedStats||[],data.eliminatedNoAnswer||0);
-  } else {
-    const body=document.getElementById('spStatsBody');
-    if(body) body.innerHTML='<div class="sp-empty">정답 공개 후 표시됩니다</div>';
-  }
+  if(data.phase==='REVEAL'&&data.answerStats)renderChart(data.answerStats,data.eliminatedStats||[],q.choices||[],q.answer,q.type);
 }
 
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&socket.connected)socket.emit('request_state');});
@@ -676,9 +736,15 @@ socket.on('answer_progress',({answered})=>{
 });
 socket.on('text_answer_in',({name,text})=>{
   const grid=document.getElementById('shortGrid');
-  if(grid){const old=grid.querySelector(`[data-name="${name}"]`);if(old){old.textContent=text;return;}
-    const chip=document.createElement('span');chip.className='short-chip';chip.setAttribute('data-name',name);
-    chip.textContent=text;chip.title=`${name}: ${text}`;grid.appendChild(chip);}
+  if(grid){
+    const old=grid.querySelector(`[data-name="${name}"]`);
+    if(old){old.textContent='✔️ 제출완료'; return;}
+    const chip=document.createElement('span');
+    chip.className='short-chip';
+    chip.setAttribute('data-name',name);
+    chip.textContent='✔️ 제출완료';
+    grid.appendChild(chip);
+  }
 });
 socket.on('text_answer_cancelled',({name})=>{document.querySelector(`[data-name="${name}"]`)?.remove();});
 

@@ -76,9 +76,6 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative
 
 /* ══ 문제 ══ */
 #sQuestion{flex:1;display:none;flex-direction:column;gap:10px;padding:13px 38px;}
-/* 통계 패널은 기본(일반 해상도)에서 숨김 — UW 미디어쿼리에서만 표시 */
-#statsPanel{display:none;}
-@media (min-width: 1px){#statsPanel{display:flex !important;}}
 .pt-row{display:flex;align-items:center;gap:13px;}
 .prog-bar{flex:1;background:var(--bg2);border-radius:4px;height:7px;overflow:hidden;}
 .prog-fill{height:100%;background:var(--orange);border-radius:4px;transition:width .4s;}
@@ -456,18 +453,6 @@ body.outdoor .hnum{filter:brightness(1.4) !important;}
       <div class="prize-line" style="font-size:3.5vh; margin-bottom:2vh; color:var(--t1); line-height:1.4;">🏆 <strong style="color:var(--orange);">최종 우승 (골든벨)</strong><br><span style="font-size:2.5vh; color:var(--t2);">특별 상품!</span></div>
       <div class="prize-line" style="font-size:3.5vh; color:var(--t1); line-height:1.4;">🎉 <strong style="color:var(--orange);">20등 이내 생존자</strong><br><span style="font-size:2.5vh; color:var(--t2);">소정의 상품</span></div>
     </div>
-    <!-- 우측 통계/보상 패널 (울트라와이드에서만 표시) -->
-    <div id="statsPanel">
-      <div class="sp-card" id="spStatsCard">
-        <div class="sp-title">💀 탈락자 선택 분포</div>
-        <div id="spStatsBody"><div class="sp-empty">정답 공개 후 표시됩니다</div></div>
-      </div>
-      <div class="sp-card">
-        <div class="sp-title">🎁 상품 안내</div>
-        <div class="sp-reward-line">🎁 <span><strong>20등 이내</strong> 소정의 상품</span></div>
-        <div class="sp-reward-line special">🏆 <span>최종 <strong>골든벨 우승자</strong> 특별 상품!</span></div>
-      </div>
-    </div>
   </div>
 
   <div id="sGameover">
@@ -574,14 +559,7 @@ function applyQuestionView(data){
   document.getElementById('progFill').style.width=`${((data.questionIndex+1)/data.totalQuestions)*100}%`;
   document.getElementById('trNum').textContent=data.timeLeft||'--';
   renderChoices(q.choices||[],q.type,data.phase==='REVEAL'?q.answer:undefined);
-  if(data.phase==='REVEAL'&&data.answerStats)renderChart(data.answerStats,q.choices||[],q.answer,q.type);
-  // 탈락자 통계 패널 복원 (재접속 대비)
-  if(data.phase==='REVEAL'){
-    renderEliminatedStats(q.type,q.choices||[],q.answer,data.eliminatedStats||[],data.eliminatedNoAnswer||0);
-  } else {
-    const body=document.getElementById('spStatsBody');
-    if(body) body.innerHTML='<div class="sp-empty">정답 공개 후 표시됩니다</div>';
-  }
+  if(data.phase==='REVEAL'&&data.answerStats)renderChart(data.answerStats,data.eliminatedStats||[],q.choices||[],q.answer,q.type);
 }
 
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&socket.connected)socket.emit('request_state');});

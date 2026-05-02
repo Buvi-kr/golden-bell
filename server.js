@@ -207,6 +207,7 @@ function loadSession() {
 // ══════════════════════════════════════════════════════════════
 const state = {
   phase:         'LOBBY',
+  displayMode:   'promo',
   questionIndex: -1,
   mainQuestions: [],
   answersClosed: false,
@@ -228,6 +229,13 @@ const state = {
 function cq() { return state.mainQuestions[state.questionIndex]; }
 
 function survivors()   { return [...state.players.values()].filter(p => !p.eliminated); }
+// 끊긴 채로 살아있는 ghost 포함한 총 생존자 수 (UI 표시용)
+function totalAliveCount() {
+  let n = 0;
+  for (const p of state.players.values())      if (!p.eliminated) n++;
+  for (const g of state.ghostPlayers.values()) if (!g.eliminated) n++;
+  return n;
+}
 
 // ══════════════════════════════════════════════════════════════
 //  단답형 채점 (합리적 모드)
@@ -295,7 +303,12 @@ function addGameLog(msg) {
 function getAnswerStats() {
   const q = cq(); if (!q || !q.choices.length) return [];
   const stats = new Array(q.choices.length).fill(0);
+  // 연결된 생존자 + 이번 문제에 답하고 살아있는 유령
   for (const p of survivors()) if (p.answer !== null && stats[p.answer] !== undefined) stats[p.answer]++;
+  for (const g of state.ghostPlayers.values()) {
+    if (g.eliminated) continue;
+    if (g.answeredAtIndex === state.questionIndex && g.answer !== null && stats[g.answer] !== undefined) stats[g.answer]++;
+  }
   return stats;
 }
 
@@ -307,17 +320,20 @@ function buildStateFor(sid) {
   const p = state.players.get(sid); if (!p) return null;
   const q = cq();
   const meta = state.questionIndex >= 0 ? questionMeta(state.questionIndex) : { isGoldenBell: false, goldenBellNum: null, round: null, qInRound: null };
+  const totalAll = state.players.size + state.ghostPlayers.size;
   return {
     phase:          state.phase,
     questionIndex:  state.questionIndex,
     totalQuestions: state.mainQuestions.length,
-    survivorCount:  survivors().length,
-    totalPlayers:   state.players.size,
+    survivorCount:  totalAliveCount(),     // 끊긴 ghost 포함
+    totalPlayers:   totalAll,
     timeLeft:       state.timeLeft,
     timeLimit:      state.currentTimeLimit,
     answersClosed:  state.answersClosed,
     eliminated:     p.eliminated,
     eliminatedAtQuestion: p.eliminatedAtQuestion,
+    eliminatedReason:     p.eliminatedReason,
+    eliminatedAt:         p.eliminatedAt,
     name:           p.name,
     alreadyAnswered: p.answer !== null || p.answerText !== null,
     myAnswer:       p.answer,
@@ -337,15 +353,16 @@ function buildStateFor(sid) {
 
 function buildGenericState() {
   const q    = cq();
-  const surv = survivors().length;
+  const surv = totalAliveCount();
   const meta = state.questionIndex >= 0 ? questionMeta(state.questionIndex) : { isGoldenBell: false, goldenBellNum: null, round: null, qInRound: null };
+  const totalAll = state.players.size + state.ghostPlayers.size;
   return {
     phase:          state.phase,
     questionIndex:  state.questionIndex,
     totalQuestions: state.mainQuestions.length,
     survivorCount:  surv,
-    eliminatedCount: state.players.size - surv,
-    totalPlayers:   state.players.size,
+    eliminatedCount: totalAll - surv,
+    totalPlayers:   totalAll,
     timeLeft:       state.timeLeft,
     timeLimit:      state.currentTimeLimit,
     answersClosed:  state.answersClosed,
@@ -474,7 +491,8 @@ app.get('/api/qr', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-  res.json({ phase: state.phase, players: state.players.size, survivors: survivors().length,
+  const totalAll = state.players.size + state.ghostPlayers.size;
+  res.json({ phase: state.phase, players: totalAll, survivors: totalAliveCount(),
     questions: state.mainQuestions.length, cfUrl, uptime: process.uptime() });
 });
 
@@ -486,7 +504,7 @@ app.get('/api/health', (req, res) => {
     ts: Date.now(),
     uptime: process.uptime(),
     phase: state.phase,
-    players: state.players.size,
+    players: state.players.size + state.ghostPlayers.size,
     sockets: io.engine.clientsCount,
     memMB: Math.round(mem.rss / 1024 / 1024),
     cfUrl,
@@ -528,13 +546,15 @@ io.on('connection', socket => {
   log(`Connected: ${socket.id}`);
 
   socket.emit('state', buildGenericState());
+  socket.emit('display_mode', { mode: state.displayMode || 'promo' });
   if (cfUrl) socket.emit('cf_url', { url: cfUrl });
   socket.emit('game_log_history', state.gameLog.slice(-100));
   if (state.outdoorMode) socket.emit('outdoor_mode', { on: true });
 
-  socket.emit('player_list', [...state.players.values()].map(p => ({
-    name: p.name, eliminated: p.eliminated,
-  })));
+  const allPlayers = [];
+  for (const p of state.players.values()) allPlayers.push({ name: p.name, eliminated: p.eliminated });
+  for (const g of state.ghostPlayers.values()) allPlayers.push({ name: g.name, eliminated: g.eliminated });
+  socket.emit('player_list', allPlayers);
 
   socket.on('request_state', () => {
     const ps = buildStateFor(socket.id);
@@ -559,7 +579,8 @@ io.on('connection', socket => {
       state.players.set(socket.id, restored);
       socket.join('players');
       socket.emit('session_restored', buildStateFor(socket.id));
-      io.emit('player_joined', { name: ghost.name, total: state.players.size, survivors: survivors().length });
+      const totalAllRestore = state.players.size + state.ghostPlayers.size;
+      io.emit('player_joined', { name: ghost.name, total: totalAllRestore, survivors: totalAliveCount() });
       log(`Session restored: ${ghost.name}`);
       saveSession(); return;
     }
@@ -602,7 +623,8 @@ io.on('connection', socket => {
         state.players.set(socket.id, { ...ghost, uid, answer: null, answerText: null, answeredAt: null });
         socket.join('players');
         socket.emit('session_restored', buildStateFor(socket.id));
-        io.emit('player_joined', { name: ghost.name, total: state.players.size, survivors: survivors().length });
+        const totalAllRejoin = state.players.size + state.ghostPlayers.size;
+        io.emit('player_joined', { name: ghost.name, total: totalAllRejoin, survivors: totalAliveCount() });
         log(`Rejoin by name: ${ghost.name}`);
         saveSession(); return;
       }
@@ -619,7 +641,8 @@ io.on('connection', socket => {
     state.players.set(socket.id, { name: trimmed, uid: safeUid, eliminated: false, answer: null, answerText: null, answeredAt: null });
     socket.join('players');
     socket.emit('joined', { name: trimmed, uid: safeUid });
-    io.emit('player_joined', { name: trimmed, total: state.players.size, survivors: state.players.size });
+    const totalAllJoin = state.players.size + state.ghostPlayers.size;
+    io.emit('player_joined', { name: trimmed, total: totalAllJoin, survivors: totalAliveCount() });
     addGameLog(`Join: ${trimmed} (total: ${state.players.size})`);
     saveSession();
   });
@@ -660,7 +683,7 @@ io.on('connection', socket => {
     if (!p || state.phase !== 'QUESTION' || state.answersClosed) return;
     const q = cq(); if (!q || q.type !== 'short') return;
 
-    p.answerText = null; p.answeredAt = null;
+    p.answerText = null; p.answeredAt = null; p.answeredAtIndex = null;
     socket.emit('answer_cancelled');
     io.emit('text_answer_cancelled', { sid: socket.id, name: p.name });
 
@@ -671,6 +694,8 @@ io.on('connection', socket => {
   // ── Host: Start game ─────────────────────────────────────
   socket.on('host_start', () => {
     if (!isAdmin(socket)) return;
+    state.displayMode = 'lobby';
+    io.emit('display_mode', { mode: 'lobby' });
     const mainQ = loadQuestions();
     state.mainQuestions = mainQ;
     // pendingStartIndex가 설정돼 있으면 그 문제부터 시작 (실제 문제 수로 클램핑)
@@ -767,15 +792,24 @@ io.on('connection', socket => {
     log('QR popup hidden');
   });
 
+  socket.on('host_display_mode', ({ mode }) => {
+    if (!isAdmin(socket)) return;
+    state.displayMode = mode;
+    io.emit('display_mode', { mode });
+    log(`Display mode changed: ${mode}`);
+  });
+
   socket.on('host_reset', () => {
     if (!isAdmin(socket)) return;
     clearInterval(state.timerInterval);
-    Object.assign(state, { phase:'LOBBY', questionIndex:-1,
+    Object.assign(state, { phase:'LOBBY', displayMode:'promo', questionIndex:-1,
       answersClosed:false, timeLeft:0, currentTimeLimit:0, gameLog:[] });
     state.players.clear(); state.ghostPlayers.clear();
     state.mainQuestions = [];
     try { if (fs.existsSync(SESSION_PATH)) fs.unlinkSync(SESSION_PATH); } catch {}
-    io.emit('reset'); broadcastState(); log('Game reset');
+    io.emit('reset'); broadcastState(); 
+    io.emit('display_mode', { mode: 'promo' });
+    log('Game reset');
   });
 
   socket.on('host_outdoor', ({ on }) => {
@@ -851,7 +885,7 @@ io.on('connection', socket => {
         : `srv_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
       state.ghostPlayers.set(ghostKey, { ...p, uid: ghostKey, disconnectedAt: Date.now() });
       state.players.delete(socket.id);
-      io.emit('player_left', { name: p.name, total: state.players.size });
+      io.emit('player_left', { name: p.name, total: state.players.size + state.ghostPlayers.size });
       const tag = p.eliminatedReason === 'disconnect' ? ' (미답 탈락)'
                 : p.eliminatedReason === 'wrong'      ? ' (오답 탈락)'
                 : ' (ghost 저장)';
@@ -874,6 +908,8 @@ function _doNextQuestion() {
   if (state.questionIndex >= state.mainQuestions.length) { _endGame(); return; }
 
   for (const p of state.players.values()) { p.answer = null; p.answerText = null; p.answeredAt = null; p.answeredAtIndex = null; }
+  // 유령 플레이어의 이전 답안도 초기화 (이전 문제 답이 다음 reveal에 영향 주지 않도록)
+  for (const g of state.ghostPlayers.values()) { g.answer = null; g.answerText = null; g.answeredAt = null; g.answeredAtIndex = null; }
   state.phase = 'QUESTION'; state.answersClosed = false;
 
   const q = state.mainQuestions[state.questionIndex];
@@ -928,6 +964,7 @@ function _doReveal() {
   const sidByPlayer = new Map();
   for (const [sid, pl] of state.players) sidByPlayer.set(pl, sid);
 
+  // ─── ① 연결된 생존자 채점 ─────────────────────────
   for (const p of pool) {
     let ok = false;
     let reason = 'wrong';
@@ -952,6 +989,7 @@ function _doReveal() {
       p.eliminated = true;
       p.eliminatedAtQuestion = state.questionIndex + 1;
       p.eliminatedReason     = reason;
+      p.eliminatedAt         = new Date().toISOString();
       newElim.push({ name: p.name, sid, reason, choice: p.answer, text: p.answerText });
 
       // 통계 집계
@@ -960,6 +998,51 @@ function _doReveal() {
                && typeof p.answer === 'number'
                && eliminatedStats[p.answer] !== undefined) {
         eliminatedStats[p.answer]++;
+      }
+    }
+  }
+
+  // ─── ② 유령 플레이어 채점 (Bug A/B 수정) ──────────
+  // 살아있는 유령 = 끊김 직전 정답 OR 그 이전 회차 정답자
+  // 이 라운드에 답을 못한 유령은 timeout 탈락, 답했으면 채점하여 생존 가산
+  for (const g of state.ghostPlayers.values()) {
+    if (g.eliminated) continue;
+
+    const answeredThisQ = g.answeredAtIndex === state.questionIndex;
+    let gOk = false;
+    let gReason = 'timeout';
+
+    if (!answeredThisQ) {
+      // 이번 문제에 답할 기회 없었음 → 미답 탈락
+      gOk = false; gReason = 'timeout';
+    } else if (q.type === 'short') {
+      if (!g.answerText) { gOk = false; gReason = 'timeout'; }
+      else { gOk = isShortCorrect(g.answerText, q.correctAnswers); gReason = gOk ? 'wrong' : 'wrong'; }
+    } else {
+      if (g.answer === null || g.answer === undefined || !Number.isFinite(g.answer)) {
+        gOk = false; gReason = 'timeout';
+      } else {
+        gOk = g.answer === q.answer;
+        gReason = 'wrong';
+      }
+    }
+
+    if (gOk) {
+      // 정답 — 끊김 상태에서도 생존 인정
+      correct.push(g.name);
+    } else {
+      g.eliminated            = true;
+      g.eliminatedAtQuestion  = state.questionIndex + 1;
+      g.eliminatedReason      = gReason;
+      g.eliminatedAt          = new Date().toISOString();
+      addGameLog(`💀 ${g.name} (끊김 상태, ${gReason === 'timeout' ? '미답' : '오답'}) → 탈락`);
+      // 유령은 newElim에 추가 안 함 (sid 없어 individual emit 불가)
+      // 통계 집계
+      if (gReason === 'timeout') eliminatedNoAnswer++;
+      else if ((q.type === 'choice' || q.type === 'ox')
+               && typeof g.answer === 'number'
+               && eliminatedStats[g.answer] !== undefined) {
+        eliminatedStats[g.answer]++;
       }
     }
   }
@@ -1014,12 +1097,16 @@ function _doReveal() {
 }
 
 function _endGame() {
-  const winners      = survivors().map(p => p.name);
-  const allEliminated = winners.length === 0;
+  // 우승자 = 연결된 생존자 + 살아있는 유령 (Bug B: 정답 후 끊긴 사람 우승 인정)
+  const aliveConnected = survivors().map(p => p.name);
+  const aliveGhosts    = [...state.ghostPlayers.values()].filter(g => !g.eliminated).map(g => g.name);
+  const winners        = [...new Set([...aliveConnected, ...aliveGhosts])];
+  const allEliminated  = winners.length === 0;
   state.phase = 'GAMEOVER';
   io.emit('game_over', { winners, allEliminated });
   broadcastState();
-  addGameLog(`Game over - ${allEliminated ? '전원 탈락' : 'winners: ' + winners.join(', ')}`);
+  addGameLog(`Game over - ${allEliminated ? '전원 탈락' : 'winners: ' + winners.join(', ')}`
+    + (aliveGhosts.length ? ` (끊김 우승자 ${aliveGhosts.length}명 포함)` : ''));
   try { if (fs.existsSync(SESSION_PATH)) fs.unlinkSync(SESSION_PATH); } catch {}
 }
 

@@ -27,13 +27,13 @@
 }
 ```
 
-### 2. '상품 안내 패널' 우측 상시 고정
-기존 우측에 간헐적으로 뜨던 텍스트 통계 패널(`statsPanel`)을 완전히 숨기고, 그 자리에 초대형 상품 안내를 박아두어 참가자들의 동기를 자극합니다.
+### 2. 중복 상품 정보 제거 및 우측 패널 고정
+기존 우측에 뜨던 통계/상품 패널(`statsPanel`)을 완전히 **삭제**하고, 우측 `prize` 영역에만 초대형 상품 안내를 고정합니다. (가운데와 우측에 상품 정보가 중복 노출되던 원인인 `statsPanel`을 코드에서 완전히 지웁니다.)
 
 **[적용 방법]**
-1. 기존 CSS의 `#statsPanel` 숨김 처리:
-   `#statsPanel { display: none !important; }`
-2. `contentArea` 태그 바로 아래에 상품 HTML 태그 추가:
+1. `display.html` HTML 코드에서 `<div id="statsPanel">...</div>` 요소 전체를 삭제합니다.
+2. 관련된 JS 코드(`const body=document.getElementById('spStatsBody');` 등)도 함께 삭제하여 에러를 방지합니다.
+3. `contentArea` 태그 바로 아래에 새로운 상품 HTML 태그 추가:
 ```html
 <div class="lobby-prize-card" id="qPrizePanel" style="grid-area: prize; display:flex; flex-direction:column; justify-content:center; ...">
   <div class="prize-title">🎁 상품 안내</div>
