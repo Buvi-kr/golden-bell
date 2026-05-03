@@ -1052,14 +1052,20 @@ function _doReveal() {
   }
   broadcastState(); saveSession();
 
-  // 자동 종료 조건 (v8.2: 골든벨 제거 → 회차 단위 단순화)
-  // (a) 회차 끝(20번째) + 전원 탈락 → 즉시 GAMEOVER
-  // (b) 회차 끝(20번째) + 생존자 있음 → 호스트가 다음 회차로 진행할지 종료할지 결정
+  // 자동 종료 조건 (v8.3):
+  // (a) 회차 끝(20번째) → 무조건 자동 GAMEOVER (생존자 = 우승자, 전원 탈락 = 패배)
+  // (b) 전체 문제 소진 → 자동 GAMEOVER
   // (c) 회차 도중 전원 탈락 → 자동 종료 X (호스트가 다음 회차/종료 선택)
+  // ✨ 3초 grace — 호스트가 다음 문제 클릭하면 override 가능
   const atRoundEnd = ((state.questionIndex + 1) % ROUND_SIZE) === 0;
   const atFinalQ   = (state.questionIndex + 1) >= state.mainQuestions.length;
-  if (correct.length === 0 && (atRoundEnd || atFinalQ)) {
-    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 1500);
+  if (atRoundEnd || atFinalQ) {
+    const currentRound = Math.floor(state.questionIndex / ROUND_SIZE) + 1;
+    const reason = atFinalQ ? '전체 문제 소진' : `${currentRound}회차 종료`;
+    addGameLog(`🏁 ${reason} — 3초 후 자동 종료 (생존 ${correct.length}명)`);
+    setTimeout(() => { if (state.phase === 'REVEAL') _endGame(); }, 3000);
+  } else if (correct.length === 0) {
+    addGameLog('💀 회차 도중 전원 탈락 — 호스트 결정 대기 중');
   }
 }
 
