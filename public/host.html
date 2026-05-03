@@ -225,9 +225,16 @@ header h1{font-size:16px;color:var(--orange);}
     <!-- 핵심 버튼: 다음 문제 (전체 너비) -->
     <button class="btn btn-n btn-w" id="btnN" onclick="hostNext()" disabled
       style="font-size:16px;padding:15px;font-weight:900;margin-bottom:6px;">▶ 다음 문제</button>
-    <!-- 보조 버튼 3열 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:5px;">
-      <button class="btn btn-s"   id="btnS"     onclick="hostStart()">🚀 시작</button>
+    <!-- 회차 시작 버튼 (LOBBY에서만 활성) — 각 회차 = 20문제 -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px;">
+      <button class="btn btn-s" id="btnR1" onclick="hostStartRound(1)" style="font-size:11px;padding:11px 2px;font-weight:900;letter-spacing:.5px;">🚀 1회차</button>
+      <button class="btn btn-s" id="btnR2" onclick="hostStartRound(2)" style="font-size:11px;padding:11px 2px;font-weight:900;letter-spacing:.5px;">🚀 2회차</button>
+      <button class="btn btn-s" id="btnR3" onclick="hostStartRound(3)" style="font-size:11px;padding:11px 2px;font-weight:900;letter-spacing:.5px;">🚀 3회차</button>
+      <button class="btn btn-s" id="btnR4" onclick="hostStartRound(4)" style="font-size:11px;padding:11px 2px;font-weight:900;letter-spacing:.5px;">🚀 4회차</button>
+      <button class="btn btn-s" id="btnR5" onclick="hostStartRound(5)" style="font-size:11px;padding:11px 2px;font-weight:900;letter-spacing:.5px;">🚀 5회차</button>
+    </div>
+    <!-- 보조 버튼 2열 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:5px;">
       <button class="btn btn-end" id="btnE"     onclick="confirmEnd()"   disabled>🏁 종료</button>
       <button class="btn btn-rst" id="btnReset" onclick="confirmReset()">🔄 초기화</button>
     </div>
@@ -446,9 +453,9 @@ socket.on('state', data => {
   updateRoundIndicator(data);
 });
 
-socket.on('game_started', ({ total }) => {
-  const rounds = Math.ceil(total / 20);
-  toast(`⚡ 스피드 골든벨 시작! ${rounds}회차 (각 20문제) — 5초 후 시작합니다`);
+socket.on('game_started', ({ total, startRound }) => {
+  const r = startRound || 1;
+  toast(`⚡ ${r}회차 시작! Q${(r-1)*20+1}~Q${Math.min(r*20, total)} — 5초 후 시작합니다`);
   players.forEach(p => p.eliminated = false);
   renderPlayers(); sfx('correct');
 });
@@ -638,7 +645,12 @@ function updateStats(data) {
 
 function updateButtons(ph) {
   const B = id => document.getElementById(id);
-  B('btnS').disabled  = ph!=='LOBBY';
+  // 5개 회차 시작 버튼 — LOBBY일 때만 활성
+  const lobbyOnly = ph !== 'LOBBY';
+  for (let r = 1; r <= 5; r++) {
+    const b = B(`btnR${r}`);
+    if (b) b.disabled = lobbyOnly;
+  }
   B('btnN').disabled  = ph!=='LOBBY' && ph!=='REVEAL';
   B('btnE').disabled  = ph==='LOBBY' || ph==='GAMEOVER';
   B('btnPause').disabled = ph !== 'QUESTION' || answersClosed;
@@ -715,14 +727,15 @@ function btnCooltime(id, ms = 1500) {
   return true;
 }
 
-function hostStart() {
-  if (!btnCooltime('btnS', 2000)) return;
+function hostStartRound(roundNum) {
+  const btnId = `btnR${roundNum}`;
+  if (!btnCooltime(btnId, 2000)) return;
   // 0명일 때 확인
   const playerCount = parseInt(document.getElementById('sTotal')?.textContent || '0', 10) || 0;
   if (playerCount === 0) {
-    if (!confirm('현재 입장한 참가자가 0명입니다. 정말 시작하시겠습니까?')) return;
+    if (!confirm(`${roundNum}회차 — 현재 입장한 참가자가 0명입니다. 정말 시작하시겠습니까?`)) return;
   }
-  socket.emit('host_start');
+  socket.emit('host_start', { startRound: roundNum });
 }
 
 function hostNext()     {

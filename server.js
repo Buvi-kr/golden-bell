@@ -689,14 +689,19 @@ io.on('connection', socket => {
   });
 
   // ── Host: Start game ─────────────────────────────────────
-  socket.on('host_start', () => {
+  // payload: { startRound?: number } — startRound가 있으면 해당 회차 시작 문제로 점프
+  socket.on('host_start', (payload = {}) => {
     if (!isAdmin(socket)) return;
     state.displayMode = 'lobby';
     io.emit('display_mode', { mode: 'lobby' });
     const mainQ = loadQuestions();
     state.mainQuestions = mainQ;
-    // pendingStartIndex가 설정돼 있으면 그 문제부터 시작 (실제 문제 수로 클램핑)
-    const rawPending = state.pendingStartIndex;
+    // 회차 직접 지정 (1~N) 우선, 없으면 pendingStartIndex 사용
+    let rawPending = state.pendingStartIndex;
+    if (payload && typeof payload.startRound === 'number' && payload.startRound > 0) {
+      rawPending = (payload.startRound - 1) * ROUND_SIZE + 1;
+      log(`Host requested round ${payload.startRound} → Q${rawPending}`);
+    }
     const pending = rawPending > 0 ? Math.min(rawPending, mainQ.length) : 0;
     if (rawPending > mainQ.length && rawPending > 0) {
       log(`pendingStartIndex(${rawPending}) > 문제 수(${mainQ.length}), Q${mainQ.length}로 클램핑`, 'WARN');
@@ -710,9 +715,11 @@ io.on('connection', socket => {
       p.eliminated = false; p.answer = null; p.answerText = null;
       delete p.eliminatedAtQuestion;
     }
-    io.emit('game_started', { total: mainQ.length });
+    const startRoundLabel = payload && payload.startRound > 0
+      ? `${payload.startRound}회차 (Q${pending}부터)` : '1회차부터';
+    io.emit('game_started', { total: mainQ.length, startRound: payload?.startRound || 1 });
     broadcastState();
-    addGameLog(`Game started: ${state.players.size} players, ${mainQ.length} Qs`);
+    addGameLog(`Game started: ${state.players.size} players, ${startRoundLabel}`);
     saveSession();
 
     // 5초 카운트다운 후 첫 문제 자동 시작
