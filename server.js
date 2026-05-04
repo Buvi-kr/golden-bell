@@ -11,8 +11,7 @@ const os      = require('os');
 
 const SERVER_START_TIME = new Date().toISOString();
 const QUESTION_TIME     = 15;   // 전 문제 15초 고정
-const REVEAL_DELAY      = 3000; // ms: 답변 마감 후 정답 공개까지 카운트다운
-const ANSWER_GRACE      = 2000; // ms: 타이머 만료 후 네트워크 지연 답변 수용 여유
+const REVEAL_DELAY      = 3000; // ms: 카운트다운 (3,2,1) 겸 네트워크 지연 답변 수용 구간
 const ROUND_SIZE = 20;          // 회차당 문제 수 (v8.2: 15 → 20, 골든벨 제거)
 
 const app    = express();
@@ -444,11 +443,11 @@ let cfUrl = '', cfLastSize = 0, _tunnelLastOk = Date.now();
 function parseCfLog() {
   if (!fs.existsSync(CF_LOG)) return;
   try {
-    // /g 로 모든 URL 찾고 가장 마지막 것 사용 (watchdog 재시작 시 새 URL 반영)
+    // 최초 URL만 감지 (게임 중 URL 변경 브로드캐스트 제거 — 참가자 혼란 방지)
     const matches = fs.readFileSync(CF_LOG, 'utf8').match(/https:\/\/[\w-]+\.trycloudflare\.com/g);
     if (matches && matches.length) {
       const latest = matches[matches.length - 1];
-      if (latest !== cfUrl) {
+      if (!cfUrl && latest) {
         cfUrl = latest;
         log(`Tunnel URL: ${cfUrl}`);
         io.emit('cf_url', { url: cfUrl });
@@ -885,10 +884,11 @@ function _doNextQuestion() {
 }
 
 function _onTimeUp(q) {
-  // 클라이언트 UI는 즉시 잠금 (터치 차단), 서버 마감은 grace period 후
+  // 클라이언트 UI 즉시 잠금 (터치 차단) + 카운트다운 동시 시작
   io.emit('time_up');
+  io.emit('countdown', { from: 3, type: 'reveal' });
 
-  // grace period: 네트워크 지연으로 늦게 도착하는 답변 수용 (2초)
+  // 카운트다운 3초 = 네트워크 지연 답변 수용 구간 (서버 마감은 3초 후)
   setTimeout(() => {
     state.answersClosed = true;
 
@@ -898,10 +898,8 @@ function _onTimeUp(q) {
       io.emit('answers_locked', { type: q.type, answers: [] });
     }
 
-    // 3초 카운트다운 후 자동 정답 공개
-    io.emit('countdown', { from: 3, type: 'reveal' });
-    setTimeout(() => { _doReveal(); }, REVEAL_DELAY);
-  }, ANSWER_GRACE);
+    _doReveal();
+  }, REVEAL_DELAY);
 }
 
 function _doReveal() {
