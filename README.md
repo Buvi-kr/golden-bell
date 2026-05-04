@@ -216,7 +216,7 @@ golden-bell/
 
 ## 📦 패치노트
 
-### v8.7 — 2026-05-04 (현장 운영 실전 버그 4건 수정)
+### v8.7 — 2026-05-04 (현장 운영 실전 버그 5건 수정)
 
 > 2026-05-04 현장 운영에서 발견된 "답 눌렀는데 미답 탈락", "호스트 참여자 목록 탈락 미반영" 등 실전 이슈 대응
 
@@ -234,6 +234,10 @@ golden-bell/
 - **호스트 참여자 목록 탈락 미표시 수정 (`host.html`)**
   - 기존: `reveal` 이벤트의 `eliminated` 배열이 `{name, reason}` 객체인데 문자열로 처리 → `players.get(undefined)` → 탈락 표시 불가
   - 변경: `elims.forEach(e => players.get(e.name))` — 정상적으로 빨간 점 표시
+
+- **탈락자가 다음 문제 화면을 보는 동기화 누락 수정 (`participant.html`)**
+  - 기존: `eliminated` 이벤트 미수신 시 → `myEliminated = false` 유지 → 다음 문제 화면 표시 → 선물 대상이 아닌데 Q5에서 탈락한 줄 착각
+  - 변경: 매 `question` 이벤트 수신 시 `request_state`로 서버에 탈락 여부 재확인 → 탈락자면 즉시 탈락 화면 전환
 
 #### 🟢 UX 개선
 - **호스트 일시정지 참가자 반영 (`participant.html`)**

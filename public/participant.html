@@ -799,6 +799,10 @@
 
       if (myEliminated) { showScreen('sEliminated'); return; }
 
+      // ✨ 방어: 서버에 탈락 상태 재확인 (이전 문제의 eliminated 이벤트 미수신 대비)
+      // state_sync 응답에서 eliminated=true면 applyFullState가 탈락 화면으로 전환
+      socket.emit('request_state');
+
       renderChoices({ choices, type });
       // ✨ 방어 2: 렌더 직후 새 버튼들도 한 번 더 활성화 보장
       document.querySelectorAll('#answersArea .cbtn, #answersArea .ox-btn, #answersArea .short-inp, #answersArea button').forEach(el => {
