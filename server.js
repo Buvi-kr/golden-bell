@@ -443,14 +443,13 @@ let cfUrl = '', cfLastSize = 0, _tunnelLastOk = Date.now();
 function parseCfLog() {
   if (!fs.existsSync(CF_LOG)) return;
   try {
-    // 최초 URL만 감지 (게임 중 URL 변경 브로드캐스트 제거 — 참가자 혼란 방지)
     const matches = fs.readFileSync(CF_LOG, 'utf8').match(/https:\/\/[\w-]+\.trycloudflare\.com/g);
     if (matches && matches.length) {
       const latest = matches[matches.length - 1];
-      if (!cfUrl && latest) {
+      if (latest !== cfUrl) {
         cfUrl = latest;
         log(`Tunnel URL: ${cfUrl}`);
-        io.emit('cf_url', { url: cfUrl });
+        // 브로드캐스트 안 함 — 호스트가 새로고침하면 connect 시 자동 전달
       }
     }
   } catch {}
