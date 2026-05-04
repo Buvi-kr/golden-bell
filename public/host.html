@@ -558,7 +558,7 @@ socket.on('text_answer_cancelled', ({ name }) => {
 socket.on('reveal', ({ correctAnswer, correctAnswers, stats, eliminated:elims, survivorCount, type }) => {
   renderQuestion(currentQ, correctAnswer, correctAnswers);
   if (stats && stats.length) renderChart(stats, currentQ?.choices||[], correctAnswer);
-  elims.forEach(name => { const p=players.get(name); if(p) p.eliminated=true; });
+  elims.forEach(e => { const p=players.get(e.name); if(p) p.eliminated=true; });
   renderPlayers();
   document.getElementById('timerD').textContent = '--';
   document.getElementById('timerD').className   = 'timer-big';

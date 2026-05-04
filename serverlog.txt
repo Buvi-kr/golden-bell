@@ -1,0 +1,158 @@
+=====================================================
+   Golden Bell Quiz Server System (v4.0)
+=====================================================
+
+
+=====================================================
+    [SUCCESS] CLOUDFLARE PUBLIC LINKS
+=====================================================
+ Share these links with people outside your network:
+
+   - PARTICIPANT:  https://defend-contents-settings-exp.trycloudflare.com/participant.html
+   - DISPLAY:      https://defend-contents-settings-exp.trycloudflare.com/display.html
+   - HOST (Admin): https://defend-contents-settings-exp.trycloudflare.com/host.html
+=====================================================
+
+[2026-05-04 05:58:21] [INFO] Tunnel URL: https://defend-contents-settings-exp.trycloudflare.com
+[2026-05-04 05:58:21] [INFO] ====================================================
+[2026-05-04 05:58:21] [INFO]   Speed Golden Bell Server v6.0  |  Port: 3000
+[2026-05-04 05:58:21] [INFO] ====================================================
+[2026-05-04 05:58:21] [INFO]   Host:        http://localhost:3000/host.html
+[2026-05-04 05:58:21] [INFO]   Display:     http://localhost:3000/display.html
+[2026-05-04 05:58:21] [INFO]   Participant: http://localhost:3000/participant.html
+[2026-05-04 05:58:21] [INFO] ====================================================
+[2026-05-04 05:58:21] [INFO] Session expired (>20 min), skipping
+[2026-05-04 05:59:14] [INFO] Connected: YQ3eFEiSwRoc6pbuAAAB
+[2026-05-04 05:59:17] [INFO] Connected: dzdfbT6LQHQifDJgAAAD
+[2026-05-04 05:59:52] [INFO] Connected: KUTsaNy0f0oNZoOWAAAF
+[2026-05-04 06:00:22] [INFO] Display mode changed: lobby
+[2026-05-04 06:00:23] [INFO] Display mode changed: promo
+[2026-05-04 06:00:26] [INFO] Display mode changed: lobby
+[2026-05-04 06:00:28] [INFO] Display mode changed: promo
+[2026-05-04 06:00:29] [INFO] Display mode changed: lobby
+[2026-05-04 06:00:30] [INFO] Display mode changed: promo
+[2026-05-04 06:12:50] [INFO] Display mode changed: lobby
+[2026-05-04 06:12:51] [INFO] Display mode changed: promo
+[2026-05-04 07:00:19] [INFO] Display mode changed: lobby
+[2026-05-04 07:00:28] [INFO] Connected: UaUYIAVehSNOWiDwAAAH
+[2026-05-04 07:00:31] [INFO] [EVENT] Join: 엄준식 (total: 1)
+[2026-05-04 07:00:50] [INFO] Disconnected: 엄준식 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:08:43] [INFO] Connected: w6m1PCfAmEyTqQbVAAAJ
+[2026-05-04 07:08:43] [INFO] Session restored: 엄준식
+[2026-05-04 07:08:53] [INFO] Excel loaded: 100 questions
+[2026-05-04 07:08:53] [INFO] Host requested round 5 → Q81
+[2026-05-04 07:08:53] [INFO] [EVENT] Game started: 1 players, 5회차 (Q81부터)
+[2026-05-04 07:08:58] [INFO] [EVENT] [5회차-1번] Q81: 태양은 지구의 약 109배 크다.
+[2026-05-04 07:09:16] [INFO] [EVENT] Reveal [ox]: survived 1, out 0
+[2026-05-04 07:09:22] [INFO] [EVENT] [5회차-2번] Q82: 수십만에서 수백만개의 늙은 별들이 공 모양으로 빽빽하게 모여있는 별의 집단 이름을 구상성단이라고 부른다.
+[2026-05-04 07:09:40] [INFO] [EVENT] Reveal [ox]: survived 1, out 0
+[2026-05-04 07:09:46] [INFO] [EVENT] [5회차-3번] Q83: 이소연 우주인은 전세계에서 475번째, 여성으로는 49번째 우주인이다.
+[2026-05-04 07:10:04] [INFO] [EVENT] Reveal [ox]: survived 1, out 0
+[2026-05-04 07:10:07] [INFO] [EVENT] [5회차-4번] Q84: 인류 최초의 우주인은 누구인가요?
+[2026-05-04 07:10:25] [INFO] [EVENT] Reveal [choice]: survived 1, out 0
+[2026-05-04 07:10:29] [INFO] [EVENT] [5회차-5번] Q85: 국제우주정거장은 하루에 지구를 약 15.7바퀴 돈다.
+[2026-05-04 07:10:47] [INFO] [EVENT] Reveal [ox]: survived 1, out 0
+[2026-05-04 07:10:51] [INFO] [EVENT] [5회차-6번] Q86: 지구와 달 사이에는 모든 태양계 행성이 들어갈 수 있다.
+[2026-05-04 07:11:00] [INFO] Disconnected: 엄준식 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:11:09] [INFO] [EVENT] 💀 엄준식 (끊김 상태, 오답) → 탈락
+[2026-05-04 07:11:09] [INFO] [EVENT] Reveal [ox]: survived 0, out 0
+[2026-05-04 07:11:09] [INFO] [EVENT] 💀 회차 도중 전원 탈락 — 호스트 결정 대기 중
+[2026-05-04 07:11:21] [INFO] Connected: Bq8BnT7m_l-jrXIeAAAL
+[2026-05-04 07:11:21] [INFO] Session restored: 엄준식
+[2026-05-04 07:11:25] [INFO] Disconnected: 엄준식 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:11:34] [INFO] [EVENT] Game over - 전원 탈락
+[2026-05-04 07:11:38] [INFO] Display mode changed: lobby
+[2026-05-04 07:11:40] [INFO] Display mode changed: lobby
+[2026-05-04 07:11:44] [INFO] Game reset
+[2026-05-04 07:11:48] [INFO] Display mode changed: lobby
+[2026-05-04 07:12:25] [INFO] Connected: H89HaUq_9XQ07fJKAAAN
+[2026-05-04 07:12:25] [INFO] [EVENT] Join: 엄준식 (total: 1)
+[2026-05-04 07:12:27] [INFO] Connected: sLb_LpHg3Dr3Qio1AAAP
+[2026-05-04 07:12:28] [INFO] Disconnected: 엄준식 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:12:33] [INFO] [EVENT] Join: 홍윤준 (total: 1)
+[2026-05-04 07:12:36] [INFO] Connected: jbawOeFc5qqCD_RqAAAR
+[2026-05-04 07:12:49] [INFO] [EVENT] Join: 변승재 (total: 2)
+[2026-05-04 07:13:11] [INFO] Connected: 07bCkkhDCoWmOd34AAAT
+[2026-05-04 07:13:19] [INFO] Disconnected: 변승재 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:13:21] [INFO] [EVENT] Join: 김예슬 (total: 2)
+[2026-05-04 07:13:29] [INFO] Disconnected: 김예슬 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:13:45] [INFO] Connected: Ww7eI-Ex_yk14qVFAAAV
+[2026-05-04 07:13:46] [INFO] Connected: BT2elyrgFhzo-RjtAAAX
+[2026-05-04 07:13:46] [INFO] Session restored: 엄준식
+[2026-05-04 07:13:49] [INFO] Disconnected: 엄준식 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:13:53] [INFO] [EVENT] Join: 변경섭 (total: 2)
+[2026-05-04 07:14:11] [INFO] Connected: PB5zf74MOHA72b1QAAAZ
+[2026-05-04 07:14:11] [INFO] Connected: OSEkdGy6193iDZUeAAAb
+[2026-05-04 07:14:15] [INFO] [EVENT] Join: 김동윤 (total: 3)
+[2026-05-04 07:14:16] [INFO] [EVENT] Join: 김정욱 (total: 4)
+[2026-05-04 07:14:17] [INFO] Connected: qSqSkKg-ZkLFLnf9AAAd
+[2026-05-04 07:14:17] [INFO] Session restored: 변승재
+[2026-05-04 07:14:26] [INFO] Disconnected: 변경섭 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:14:39] [INFO] Connected: DsB3aMtIls1XT02VAAAf
+[2026-05-04 07:14:43] [INFO] Connected: 2Eu0pcKOTlQZWVllAAAh
+[2026-05-04 07:14:48] [INFO] [EVENT] Join: 경기도민 (total: 5)
+[2026-05-04 07:14:49] [INFO] Disconnected: 변승재 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:14:50] [INFO] [EVENT] Join: 강인한 싸나이 (total: 5)
+[2026-05-04 07:14:55] [INFO] Connected: 5SBY688karHj4cV8AAAj
+[2026-05-04 07:15:05] [INFO] [EVENT] Join: 완전멋진영조님 (total: 6)
+[2026-05-04 07:15:05] [INFO] Connected: H3FrehcEN3JTICDGAAAl
+[2026-05-04 07:15:13] [INFO] Disconnected: 김정욱 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:15:13] [INFO] Connected: n5ow8jkVVklfj-caAAAn
+[2026-05-04 07:15:13] [INFO] Session restored: 김정욱
+[2026-05-04 07:15:39] [INFO] Connected: SgLqbwbKPeB47MQyAAAp
+[2026-05-04 07:15:45] [INFO] [EVENT] Join: 손재원 (total: 7)
+[2026-05-04 07:15:55] [INFO] Connected: D3UdwCUa1MFRhFFDAAAr
+[2026-05-04 07:16:00] [INFO] Connected: knF2BTV6SVByTCeoAAAt
+[2026-05-04 07:16:06] [INFO] [EVENT] Join: 알리야 (total: 8)
+[2026-05-04 07:16:07] [INFO] [EVENT] Join: 이아윤 (total: 9)
+[2026-05-04 07:16:16] [INFO] Connected: 2dbPHkxMr3WCtcjbAAAv
+[2026-05-04 07:16:22] [INFO] Connected: bxnLcU7abMUnS4nzAAAx
+[2026-05-04 07:16:23] [INFO] Connected: 0G-af26wB9HnsoiBAAAz
+[2026-05-04 07:16:27] [INFO] [EVENT] Join: m (total: 10)
+[2026-05-04 07:16:29] [INFO] [EVENT] Join: soon (total: 11)
+[2026-05-04 07:16:32] [INFO] [EVENT] Join: 텐 유리 (total: 12)
+[2026-05-04 07:16:34] [INFO] Excel loaded: 100 questions
+[2026-05-04 07:16:34] [INFO] Host requested round 1 → Q1
+[2026-05-04 07:16:34] [INFO] [EVENT] Game started: 12 players, 1회차 (Q1부터)
+[2026-05-04 07:16:39] [INFO] [EVENT] [1회차-1번] Q1: 지구는 평평하다.
+[2026-05-04 07:16:41] [INFO] Connected: OK9jiFspj6mM5ny_AAA1
+[2026-05-04 07:16:57] [INFO] Connected: LArBpwEPe7hEUS1qAAA3
+[2026-05-04 07:16:57] [INFO] [EVENT] Reveal [ox]: survived 10, out 2
+[2026-05-04 07:16:57] [INFO] [EVENT] 탈락: 알리야, 텐 유리
+[2026-05-04 07:16:58] [INFO] Connected: _zYt1oK2rAUtBypTAAA5
+[2026-05-04 07:17:06] [INFO] [EVENT] [1회차-2번] Q2: 지구는 둥글다.
+[2026-05-04 07:17:24] [INFO] [EVENT] Reveal [ox]: survived 10, out 0
+[2026-05-04 07:17:28] [INFO] [EVENT] [1회차-3번] Q3: 태양은 태양계의 유일한 별이다.
+[2026-05-04 07:17:33] [INFO] Connected: IfBukGM_MmcKxe8CAAA7
+[2026-05-04 07:17:35] [INFO] Disconnected: 텐 유리 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:17:38] [INFO] Disconnected: 알리야 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:17:38] [INFO] Connected: sVIng0YYLapSTq6_AAA9
+[2026-05-04 07:17:38] [INFO] Session restored: 알리야
+[2026-05-04 07:17:46] [INFO] [EVENT] Reveal [ox]: survived 8, out 2
+[2026-05-04 07:17:46] [INFO] [EVENT] 탈락: 김정욱, 손재원
+[2026-05-04 07:17:47] [INFO] Connected: k89PK99IRiFi1rAtAAA_
+[2026-05-04 07:17:57] [INFO] [EVENT] [1회차-4번] Q4: 지구와 크기가 비슷한 태양계 행성은?
+[2026-05-04 07:18:15] [INFO] [EVENT] Reveal [choice]: survived 1, out 7
+[2026-05-04 07:18:15] [INFO] [EVENT] 탈락: 홍윤준, 경기도민, 강인한 싸나이, 완전멋진영조님, 이아윤, m, soon
+[2026-05-04 07:18:16] [INFO] Disconnected: 알리야 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:18:25] [INFO] [EVENT] [1회차-5번] Q5: 블랙홀은 너무 커다란 중력때문에 빛도 흡수한다.
+[2026-05-04 07:18:43] [INFO] [EVENT] Reveal [ox]: survived 0, out 1 (미답 1)
+[2026-05-04 07:18:43] [INFO] [EVENT] 탈락: 김동윤(미답)
+[2026-05-04 07:18:43] [INFO] [EVENT] 💀 회차 도중 전원 탈락 — 호스트 결정 대기 중
+[2026-05-04 07:19:39] [INFO] Disconnected: soon (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:19:39] [INFO] Disconnected: 손재원 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:19:41] [INFO] Disconnected: 이아윤 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:19:41] [INFO] Disconnected: 강인한 싸나이 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:19:42] [INFO] Disconnected: m (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:19:58] [INFO] Connected: O8GgCIsJJL8ENT9_AABB
+[2026-05-04 07:19:58] [INFO] Session restored: 손재원
+[2026-05-04 07:20:00] [INFO] Disconnected: 경기도민 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:20:09] [INFO] Disconnected: 홍윤준 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:20:32] [INFO] Disconnected: 김정욱 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:20:46] [INFO] Disconnected: 손재원 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:21:14] [INFO] Display mode changed: promo
+[2026-05-04 07:21:18] [INFO] Disconnected: 완전멋진영조님 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:21:42] [INFO] Connected: q8a05MzoA8dcegQkAABF
+[2026-05-04 07:21:45] [INFO] Disconnected: 김동윤 (ghost 저장 — 재접속 시 답변 가능)
+[2026-05-04 07:22:17] [INFO] Connected: OLyTjbJv5QUmiQNwAABH
+

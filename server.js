@@ -12,6 +12,7 @@ const os      = require('os');
 const SERVER_START_TIME = new Date().toISOString();
 const QUESTION_TIME     = 15;   // 전 문제 15초 고정
 const REVEAL_DELAY      = 3000; // ms: 답변 마감 후 정답 공개까지 카운트다운
+const ANSWER_GRACE      = 2000; // ms: 타이머 만료 후 네트워크 지연 답변 수용 여유
 const ROUND_SIZE = 20;          // 회차당 문제 수 (v8.2: 15 → 20, 골든벨 제거)
 
 const app    = express();
@@ -617,7 +618,11 @@ io.on('connection', socket => {
           socket.emit('join_error', '세션이 만료되었습니다 (30분 초과).'); return;
         }
         state.ghostPlayers.delete(gUid);
-        state.players.set(socket.id, { ...ghost, uid, answer: null, answerText: null, answeredAt: null });
+        // session_restore와 동일: 같은 문제 내 재접속이면 답변 보존
+        const sameQ = ghost.answeredAtIndex === state.questionIndex && state.phase === 'QUESTION';
+        state.players.set(socket.id, sameQ
+          ? { ...ghost, uid }
+          : { ...ghost, uid, answer: null, answerText: null, answeredAt: null, answeredAtIndex: null });
         socket.join('players');
         socket.emit('session_restored', buildStateFor(socket.id));
         const totalAllRejoin = state.players.size + state.ghostPlayers.size;
@@ -880,18 +885,23 @@ function _doNextQuestion() {
 }
 
 function _onTimeUp(q) {
-  state.answersClosed = true;
+  // 클라이언트 UI는 즉시 잠금 (터치 차단), 서버 마감은 grace period 후
   io.emit('time_up');
 
-  if (q.type === 'short') {
-    io.emit('answers_locked', { type: 'short', answers: getTextAnswers() });
-  } else {
-    io.emit('answers_locked', { type: q.type, answers: [] });
-  }
+  // grace period: 네트워크 지연으로 늦게 도착하는 답변 수용 (2초)
+  setTimeout(() => {
+    state.answersClosed = true;
 
-  // 3초 카운트다운 후 자동 정답 공개
-  io.emit('countdown', { from: 3, type: 'reveal' });
-  setTimeout(() => { _doReveal(); }, REVEAL_DELAY);
+    if (q.type === 'short') {
+      io.emit('answers_locked', { type: 'short', answers: getTextAnswers() });
+    } else {
+      io.emit('answers_locked', { type: q.type, answers: [] });
+    }
+
+    // 3초 카운트다운 후 자동 정답 공개
+    io.emit('countdown', { from: 3, type: 'reveal' });
+    setTimeout(() => { _doReveal(); }, REVEAL_DELAY);
+  }, ANSWER_GRACE);
 }
 
 function _doReveal() {

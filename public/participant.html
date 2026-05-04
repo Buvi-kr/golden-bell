@@ -973,6 +973,28 @@
       }
     });
 
+    socket.on('timer_paused', ({ timeLeft, timeLimit }) => {
+      if (!inGame) return;
+      const bar = document.getElementById('timerBar');
+      if (bar) {
+        // CSS 애니메이션 중지: 현재 위치에서 고정
+        const pct = timeLimit > 0 ? Math.max(0, (timeLeft / timeLimit) * 100) : 0;
+        bar.style.transition = 'none';
+        bar.style.width = pct + '%';
+      }
+      const el = document.getElementById('qTimer');
+      if (el) { el.textContent = timeLeft; el.className = 'q-timer'; }
+      showToast('⏸ 진행자가 일시정지했습니다');
+    });
+
+    socket.on('timer_resumed', ({ timeLeft, timeLimit }) => {
+      if (!inGame) return;
+      startTimerBar(timeLeft, timeLimit);
+      const el = document.getElementById('qTimer');
+      if (el) el.textContent = timeLeft;
+      showToast('▶ 타이머가 재개되었습니다');
+    });
+
     socket.on('time_up', () => {
       if (!inGame) return;
       answersClosed = true;
