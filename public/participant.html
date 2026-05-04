@@ -772,6 +772,14 @@
       revealDone = false; answersClosed = false;
       currentTimeLimit = timeLimit || 15;
 
+      // ✨ 방어: 이전 문제의 잔존 .locked / disabled / pointer-events 강제 제거
+      // (time_up이나 answers_locked로 잔재된 상태가 있으면 새 버튼에도 영향 줄 수 있음)
+      document.querySelectorAll('.cbtn,.ox-btn,.short-inp').forEach(el => {
+        el.classList.remove('locked');
+        el.disabled = false;
+        el.style.pointerEvents = '';
+      });
+
       const qNumEl = document.getElementById('qNum');
       const rnd = round || (Math.floor(index / 20) + 1);
       const qnr = qInRound || ((index % 20) + 1);
@@ -792,6 +800,12 @@
       if (myEliminated) { showScreen('sEliminated'); return; }
 
       renderChoices({ choices, type });
+      // ✨ 방어 2: 렌더 직후 새 버튼들도 한 번 더 활성화 보장
+      document.querySelectorAll('#answersArea .cbtn, #answersArea .ox-btn, #answersArea .short-inp, #answersArea button').forEach(el => {
+        el.classList.remove('locked');
+        el.disabled = false;
+        el.style.pointerEvents = '';
+      });
       startTimerBar(timeLimit, timeLimit);
       showScreen('sQuestion');
     });
@@ -868,7 +882,10 @@
 
     // ══ 답 선택 ═══════════════════════════════════════════════════
     function selectAnswer(choice) {
-      if (revealDone || answersClosed) return;
+      // 사용자 피드백: 차단된 클릭을 명시적으로 알림
+      if (revealDone) { showToast('정답이 공개되어 답을 변경할 수 없습니다'); return; }
+      if (answersClosed) { showToast('답변이 마감되었습니다'); return; }
+      if (myEliminated) { showToast('이미 탈락 상태입니다'); return; }
       const prev = myAnswer;
       myAnswer = choice;
       document.querySelectorAll('.cbtn').forEach((b, i) => b.classList.toggle('selected', i === choice));
@@ -885,7 +902,8 @@
 
     // ══ 텍스트 제출 ═══════════════════════════════════════════════
     function submitText() {
-      if (answersClosed) return;
+      if (answersClosed) { showToast('답변이 마감되었습니다'); return; }
+      if (myEliminated) { showToast('이미 탈락 상태입니다'); return; }
       const inp = document.getElementById('shortInp');
       if (!inp) return;
       const txt = inp.value.trim();

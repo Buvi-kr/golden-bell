@@ -827,32 +827,12 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     const p = state.players.get(socket.id);
     if (p) {
-      // ─── QUESTION 단계 disconnect → 즉시 정답 검증 후 탈락 판정 (탈락 회피 방지) ───
-      if (state.phase === 'QUESTION' && !p.eliminated) {
-        const q = cq();
-        if (q) {
-          let hasAnswered = false, isCorrect = false;
-          if (q.type === 'short') {
-            hasAnswered = typeof p.answerText === 'string' && p.answerText.length > 0;
-            if (hasAnswered) isCorrect = isShortCorrect(p.answerText, q.correctAnswers);
-          } else {
-            hasAnswered = p.answer !== null && p.answer !== undefined && Number.isFinite(p.answer);
-            if (hasAnswered) isCorrect = p.answer === q.answer;
-          }
-          if (!hasAnswered) {
-            p.eliminated = true;
-            p.eliminatedAtQuestion = state.questionIndex + 1;
-            p.eliminatedReason = 'disconnect';
-            addGameLog(`💀 ${p.name} 답변 전 끊김 → 탈락`);
-          } else if (!isCorrect) {
-            p.eliminated = true;
-            p.eliminatedAtQuestion = state.questionIndex + 1;
-            p.eliminatedReason = 'wrong';
-            addGameLog(`💀 ${p.name} 오답 후 끊김 → 탈락`);
-          }
-          // 정답 후 끊김 → 살아있음 유지 (재접속 시 그대로 alive)
-        }
-      }
+      // ─── QUESTION 단계 disconnect → 즉시 탈락 처리 X (v8.5 변경) ───
+      // 시간 내 재접속 시 답변 입력/변경 가능 → 정답 맞히면 생존 인정
+      // 재접속 안 하면 _doReveal의 ghost 평가에서 처리:
+      //   • 답 미입력 (answeredAtIndex 미매치) → timeout 탈락
+      //   • 답 입력했으나 오답 → wrong 탈락
+      //   • 답 입력 + 정답 → 생존 (끊김 상태로도 우승 가능)
 
       // uid 안전장치 (없으면 즉석 생성 — 충돌 방지)
       const ghostKey = (typeof p.uid === 'string' && p.uid.length > 0)
@@ -861,10 +841,7 @@ io.on('connection', socket => {
       state.ghostPlayers.set(ghostKey, { ...p, uid: ghostKey, disconnectedAt: Date.now() });
       state.players.delete(socket.id);
       io.emit('player_left', { name: p.name, total: state.players.size + state.ghostPlayers.size });
-      const tag = p.eliminatedReason === 'disconnect' ? ' (미답 탈락)'
-                : p.eliminatedReason === 'wrong'      ? ' (오답 탈락)'
-                : ' (ghost 저장)';
-      log(`Disconnected: ${p.name}${tag}`);
+      log(`Disconnected: ${p.name} (ghost 저장 — 재접속 시 답변 가능)`);
       saveSession();
     }
   });
