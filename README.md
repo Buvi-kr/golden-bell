@@ -216,6 +216,26 @@ golden-bell/
 
 ## 📦 패치노트
 
+### v8.8 — 2026-05-05 (재접속 시 생존자 카운트 오류 수정)
+
+> 친구 골든벨 운영 중 발견: 진행 중에 누가 재접속하면 **생존자 인원이 갑자기 전체 인원으로 바뀌어 표시되고, 정답 공개 시점에 다시 정상화**되는 이슈
+
+#### 🔴 버그 수정
+- **`player_joined` 핸들러가 `total`을 `hSurv`에 잘못 표시 (`display.html`)**
+  - 기존: `socket.on('player_joined',({total})=>{...; hSurv.textContent=total;})`
+  - 변경: `total`과 `survivors` 모두 destructure → `hSurv`에는 **`survivors` 필드만** 사용
+  - 영향: 게임 진행 중 누가 재접속할 때마다 빔 디스플레이 생존자 수가 전체 입장자 수로 잠깐 바뀌었다가 다음 reveal에서 복구되던 현상 해결
+
+- **`survivors=0` falsy fallback 버그 수정 (`host.html`)**
+  - 기존: `sSurv.textContent = survivors || total` — 생존자 0명일 때 falsy 평가 → total로 fallback 표시
+  - 변경: `typeof survivors === 'number'` 체크로 0도 정확히 표시
+
+- **재접속 시 기존 탈락 상태 덮어쓰기 버그 수정 (`host.html`)**
+  - 기존: `players.set(name, { name, eliminated: false })` — 탈락한 사람이 재접속하면 호스트 패널에서 살아있다고 표기됨
+  - 변경: 기존 record가 있으면 `eliminated` 필드 그대로 유지
+
+---
+
 ### v8.7 — 2026-05-04 (현장 운영 실전 버그 6건 수정)
 
 > 2026-05-04 현장 운영에서 발견된 "답 눌렀는데 미답 탈락", "호스트 참여자 목록 탈락 미반영" 등 실전 이슈 대응

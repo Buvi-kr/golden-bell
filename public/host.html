@@ -594,9 +594,12 @@ socket.on('game_over', ({ winners, allEliminated }) => {
 });
 
 socket.on('player_joined', ({ name, total, survivors }) => {
-  players.set(name, { name, eliminated: false });
+  // 🔧 v8.8: 재접속 시 기존 탈락 상태 보존 (덮어쓰지 않음)
+  const existing = players.get(name);
+  players.set(name, { name, eliminated: existing ? !!existing.eliminated : false });
   document.getElementById('sTotal').textContent = total;
-  document.getElementById('sSurv').textContent  = survivors || total;
+  // 🔧 v8.8: survivors=0도 정확히 표시 (기존: 0이면 falsy → total로 fallback 버그)
+  if (typeof survivors === 'number') document.getElementById('sSurv').textContent = survivors;
   renderPlayers();
 });
 socket.on('player_left', ({ name, total }) => {

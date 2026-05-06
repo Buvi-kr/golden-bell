@@ -668,7 +668,12 @@ socket.on('state',data=>{
   if(data.phase==='GAMEOVER'){show('gameover');return;}
   show('question');applyQuestionView(data);
 });
-socket.on('player_joined',({total})=>{document.getElementById('lCount').textContent=total;document.getElementById('hSurv').textContent=total;});
+socket.on('player_joined',({total, survivors})=>{
+  document.getElementById('lCount').textContent = total;
+  // 🔧 v8.8: hSurv는 survivors(실제 생존자) 필드로 정확히 갱신
+  // (기존: total로 설정 → 재접속 시 생존자 카운트가 전체 인원으로 잘못 표기되는 버그)
+  if (typeof survivors === 'number') document.getElementById('hSurv').textContent = survivors;
+});
 socket.on('player_left',({total})=>document.getElementById('lCount').textContent=total);
 
 socket.on('question',({index,total,question,choices,type,timeLimit:tl,round,qInRound})=>{
